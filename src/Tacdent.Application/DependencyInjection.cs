@@ -1,5 +1,7 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Tacdent.Application.Mapping;
+using Tacdent.Application.Options;
 using Tacdent.Application.Services;
 using Tacdent.Application.Services.Interfaces;
 
@@ -7,12 +9,17 @@ namespace Tacdent.Application;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApplicationLayer(this IServiceCollection services)
+    public static IServiceCollection AddApplicationLayer(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
+        services.Configure<AuthOptions>(configuration.GetSection(AuthOptions.SectionName));
+
         // Mapperly mappers are stateless generated classes.
         services.AddSingleton<AppointmentMapper>();
         services.AddSingleton<ServiceMapper>();
 
+        services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAppointmentService, AppointmentService>();
         services.AddScoped<IServiceCatalogService, ServiceCatalogService>();
 

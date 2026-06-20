@@ -1,4 +1,5 @@
 using FluentValidation;
+using Tacdent.Api.Auth;
 using Tacdent.Api.Factories;
 using Tacdent.Api.Validators;
 
@@ -10,6 +11,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IAppointmentFactory, AppointmentFactory>();
         services.AddScoped<IServiceFactory, ServiceFactory>();
+        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
         services.AddValidatorsFromAssemblyContaining<CreateAppointmentRequestValidator>();
 
