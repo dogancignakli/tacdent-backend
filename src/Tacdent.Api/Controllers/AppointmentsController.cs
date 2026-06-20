@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Tacdent.Api.Extensions;
 using Tacdent.Api.Factories;
@@ -9,6 +10,7 @@ namespace Tacdent.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class AppointmentsController(
     IAppointmentService appointmentService,
     IAppointmentFactory factory) : ControllerBase
@@ -30,6 +32,7 @@ public class AppointmentsController(
     }
 
     [HttpPost]
+    [AllowAnonymous]
     public async Task<IActionResult> Create(
         [FromBody] CreateAppointmentRequest request,
         CancellationToken cancellationToken)
