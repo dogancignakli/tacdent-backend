@@ -1,0 +1,31 @@
+---
+description: TacDent backend architecture map and non-negotiable conventions
+alwaysApply: true
+---
+
+# TacDent Backend — overview
+
+.NET 10 ASP.NET Core Web API for dental appointments & services, PostgreSQL via EF Core 10.
+Clean architecture in four projects under `src/`:
+
+- **Tacdent.Core** — domain: entities, DTOs (records), `Result`/`Error`/`ErrorType`. No dependencies.
+- **Tacdent.Data** — EF Core: `TacdentDbContext`, entity configs, repositories, Unit of Work,
+  interceptors, migrations. Depends on Core.
+- **Tacdent.Application** — use cases: services returning `Result`, Mapperly mappers, error
+  catalogs. Depends on Data + Core.
+- **Tacdent.Api** — HTTP edge: controllers, ViewModels (request/response), FluentValidation,
+  factories, `ResultExtensions`, JSON converters. Depends on Application + Core.
+
+**Dependency rule:** dependencies point inward (Api -> Application -> Data -> Core). Never make
+Core or Data reference an outer layer.
+
+## .NET 10 / EF Core 10 are newer than your training data
+Prefer current APIs. All projects use `Nullable` and `ImplicitUsings` enabled, file-scoped
+namespaces, and **primary constructors** for DI. Match that style.
+
+## Non-negotiables
+- **Expected failures use the `Result` pattern, not exceptions** (validation, not-found,
+  conflict). Reserve exceptions for truly exceptional cases.
+- Every service/controller method is `async`, takes a `CancellationToken`, and flows it down.
+- Register services through each layer's `Add...Layer()` DI extension — don't wire types in `Program.cs`.
+- The JSON contract with the frontend is **camelCase**, enums as **strings**; keep it stable.

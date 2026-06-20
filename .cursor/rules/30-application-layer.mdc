@@ -1,0 +1,30 @@
+---
+description: Application layer conventions (services, Mapperly mappers, error catalogs)
+globs: src/Tacdent.Application/**/*.cs
+alwaysApply: false
+---
+
+# Application layer (use cases)
+
+## Services (`Services/`)
+- Each service implements an `IXxxService` interface (in `Services/Interfaces/`) and uses a
+  **primary constructor** to inject `IUnitOfWork` and the relevant Mapperly mapper.
+- Methods return `Task<Result<T>>` / `Task<Result>` for fallible operations, or a plain
+  `Task<IReadOnlyList<T>>` for list reads that can't fail. Always accept and pass a
+  `CancellationToken`.
+- Flow: load via `unitOfWork.Xxx`, branch on `null` -> `Result.Failure(...)`, otherwise mutate,
+  `unitOfWork.SaveChangesAsync(ct)`, then `Result.Success(mapper.ToDto(entity))`.
+- Business invariants live here (e.g. reject past-dated appointments) and return a domain
+  `Error` from the matching `Errors/` catalog. Set server-owned fields (`Id = Guid.NewGuid()`,
+  default `Status`) in the service, not from the incoming DTO.
+
+## Mapping (`Mapping/`)
+- Use **Riok.Mapperly**: a `[Mapper] public partial class XxxMapper` with `partial` method
+  signatures; the implementation is source-generated at build time (no reflection, no manual
+  property copying). Use `[MapperIgnoreTarget(...)]` for fields the mapper must not set
+  (`Id`, `Status`, audit fields on create).
+- Mappers are stateless -> registered as **Singleton** in `AddApplicationLayer`; services are `Scoped`.
+
+## Errors (`Errors/`)
+- One `static class XxxErrors` per aggregate. Expose reusable `Error` instances (or factory
+  methods that take ids/values) with stable dotted codes like `"Appointment.NotFound"`.

@@ -1,0 +1,30 @@
+---
+description: Data layer conventions (EF Core, repositories, Unit of Work, migrations)
+globs: src/Tacdent.Data/**/*.cs
+alwaysApply: false
+---
+
+# Data layer (EF Core + PostgreSQL)
+
+## Repositories & Unit of Work
+- Generic base `Repository<T>` (primary ctor takes `TacdentDbContext`) exposes
+  `GetByIdAsync`/`GetAllAsync`/`AddAsync`/`Update`/`Remove`. Entity-specific repos derive from it
+  and add tailored queries via an `IXxxRepository` interface.
+- **Repositories never call `SaveChanges`.** Committing is the Unit of Work's job:
+  `unitOfWork.SaveChangesAsync(ct)`. One commit per use case.
+- Read-only queries use `.AsNoTracking()`. Lookups whose result will be updated/removed are
+  **tracked** (no `AsNoTracking`) — keep that distinction.
+- New aggregate -> add `IXxxRepository` + `XxxRepository`, expose it on `IUnitOfWork`/`UnitOfWork`,
+  and register both in `DependencyInjection.AddDataLayer` as `Scoped`.
+
+## DbContext & configurations
+- `TacdentDbContext` exposes `DbSet`s and calls `ApplyConfigurationsFromAssembly`. Put mapping
+  in an `IEntityTypeConfiguration<T>` under `Configurations/` — one per entity. Set `HasMaxLength`,
+  `IsRequired`, indexes, and store enums as strings via `.HasConversion<string>()`.
+- Audit fields are handled centrally by `AuditableEntityInterceptor` (registered in DI and added
+  to the context). Don't replicate that logic elsewhere.
+
+## Migrations
+- After changing an entity or config: `dotnet ef migrations add <Name>` (the app applies
+  migrations automatically on startup via `Database.MigrateAsync()`). Don't hand-edit the model
+  snapshot.

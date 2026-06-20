@@ -1,0 +1,28 @@
+---
+description: Domain layer conventions (entities, DTOs, Result pattern)
+globs: src/Tacdent.Core/**/*.cs
+alwaysApply: false
+---
+
+# Core (domain) layer
+
+Pure domain. No EF Core, ASP.NET, or third-party packages here.
+
+## Entities (`Entities/`)
+- `class` with `{ get; set; }`. Use `required` for non-nullable strings, `string?` for optional.
+- Use precise CLR types: `Guid` ids, `DateOnly` for dates, `TimeOnly` for times, enums for
+  fixed sets (e.g. `AppointmentStatus`).
+- Entities that track timestamps inherit `Common/AuditableEntity` (`CreatedAt`/`UpdatedAt`);
+  **never set those fields by hand** — the Data-layer interceptor stamps them.
+
+## DTOs (`DTOs/`)
+- `record` with positional parameters. Separate input vs output contracts
+  (`CreateAppointmentDto` vs `AppointmentDto`). Output DTOs include audit fields; create DTOs
+  exclude `Id`, `Status`, and audit fields.
+
+## Result pattern (`Results/`)
+- Return `Result` (no value) or `Result<T>` from operations that can fail in expected ways.
+- Build failures from the `Error` factory by category: `Error.Validation`, `Error.NotFound`,
+  `Error.Conflict`, `Error.Failure` — each takes a stable `code` and a human `message`.
+- Do not throw for expected failures and do not add new `ErrorType` values without also
+  mapping them in the Api layer's `ResultExtensions`.

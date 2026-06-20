@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Tacdent.Api/Tacdent.Api.csproj" />
+    <Project Path="src/Tacdent.Application/Tacdent.Application.csproj" />
+    <Project Path="src/Tacdent.Core/Tacdent.Core.csproj" />
+    <Project Path="src/Tacdent.Data/Tacdent.Data.csproj" />
+  </Folder>
+</Solution>
