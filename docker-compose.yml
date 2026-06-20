@@ -1,16 +1,17 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: tacdent-postgres
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: tacdent-sqlserver
     restart: unless-stopped
     environment:
-      POSTGRES_USER: tacdent
-      POSTGRES_PASSWORD: tacdent_dev
-      POSTGRES_DB: tacdent
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Tacdent_dev_2026"
+      MSSQL_PID: "Developer"
     ports:
-      - "5432:5432"
+      - "1433:1433"
     volumes:
-      - tacdent_pg_data:/var/lib/postgresql/data
+      - tacdent_mssql_data:/var/opt/mssql
 
 volumes:
-  tacdent_pg_data:
+  tacdent_mssql_data:

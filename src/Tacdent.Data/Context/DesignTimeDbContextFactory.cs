@@ -12,10 +12,10 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<TacdentDbC
     public TacdentDbContext CreateDbContext(string[] args)
     {
         var connectionString = Environment.GetEnvironmentVariable("TACDENT_DB")
-            ?? "Host=localhost;Port=5432;Database=tacdent;Username=tacdent;Password=tacdent_dev";
+            ?? "Server=localhost,1433;Database=tacdent;User Id=sa;Password=Tacdent_dev_2026;TrustServerCertificate=True";
 
         var options = new DbContextOptionsBuilder<TacdentDbContext>()
-            .UseNpgsql(connectionString)
+            .UseSqlServer(connectionString)
             .Options;
 
         return new TacdentDbContext(options);

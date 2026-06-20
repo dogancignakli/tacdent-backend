@@ -1,6 +1,6 @@
 # TacDent Backend
 
-.NET 10 Web API for appointment and service management, organized as an **n-tier solution** with PostgreSQL.
+.NET 10 Web API for appointment and service management, organized as an **n-tier solution** with SQL Server.
 
 ## Architecture
 
@@ -48,7 +48,7 @@ Api ──> Application ──> Data ──> Core
 
 ## Quick start
 
-### 1. Start PostgreSQL
+### 1. Start SQL Server
 
 ```bash
 docker compose up -d
@@ -56,11 +56,10 @@ docker compose up -d
 
 | Setting | Value |
 |---------|-------|
-| Host | `localhost` |
-| Port | `5432` |
-| Database | `tacdent` |
-| User | `tacdent` |
-| Password | `tacdent_dev` |
+| Server | `localhost,1433` |
+| Database | `tacdent` (created automatically on first API run) |
+| User | `sa` |
+| Password | `Tacdent_dev_2026` |
 
 ### 2. Run the API
 
@@ -126,16 +125,16 @@ dotnet ef migrations add <Name> --project src/Tacdent.Data --startup-project src
 dotnet ef database update --project src/Tacdent.Data --startup-project src/Tacdent.Api
 ```
 
-Override the design-time connection string with the `TACDENT_DB` environment variable if needed.
+Override the design-time connection string with the `TACDENT_DB` environment variable if needed (SQL Server format: `Server=...;Database=...;User Id=...;Password=...;TrustServerCertificate=True`).
 
-> **Note:** The schema now includes `CreatedAt` and `UpdatedAt` on all entities. If you previously
-> created the `tacdent` database with the old single-project schema, drop and recreate it (or run the
-> migration against a fresh database) so the new audit columns are applied.
+> **Note:** The schema includes `CreatedAt` and `UpdatedAt` on all entities. If you previously
+> created the database with an older schema, drop and recreate it (or run the migration against a
+> fresh database) so the audit columns are applied.
 
 ## Stack
 
 - .NET 10 / ASP.NET Core Web API
-- Entity Framework Core 10 + Npgsql (PostgreSQL)
+- Entity Framework Core 10 + SQL Server
 - Riok.Mapperly (source-generated mapping)
 - FluentValidation
 - Scalar.AspNetCore (API docs UI)
