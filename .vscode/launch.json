@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET Core Launch (Tacdent.Api)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/Tacdent.Api/bin/Debug/net10.0/Tacdent.Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/Tacdent.Api",
+      "stopAtEntry": false,
+      "console": "internalConsole",
+      "launchSettingsFilePath": "${workspaceFolder}/src/Tacdent.Api/Properties/launchSettings.json",
+      "launchSettingsProfile": "http",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+        "uriFormat": "%s/scalar"
+      }
+    }
+  ]
+}
