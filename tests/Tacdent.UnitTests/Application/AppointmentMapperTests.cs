@@ -1,0 +1,57 @@
+using Tacdent.Application.Mapping;
+using Tacdent.Core.DTOs;
+using Tacdent.Core.Entities;
+using Tacdent.UnitTests.Infrastructure;
+
+namespace Tacdent.UnitTests.Application;
+
+public class AppointmentMapperTests
+{
+    private readonly AppointmentMapper _sut = new();
+
+    [Fact]
+    public void ToDto_MapsAllFields()
+    {
+        var entity = TestData.SampleAppointment();
+
+        var dto = _sut.ToDto(entity);
+
+        dto.Id.ShouldBe(entity.Id);
+        dto.PatientName.ShouldBe(entity.PatientName);
+        dto.Email.ShouldBe(entity.Email);
+        dto.Phone.ShouldBe(entity.Phone);
+        dto.PreferredDate.ShouldBe(entity.PreferredDate);
+        dto.PreferredTime.ShouldBe(entity.PreferredTime);
+        dto.ServiceType.ShouldBe(entity.ServiceType);
+        dto.Notes.ShouldBe(entity.Notes);
+        dto.Status.ShouldBe(entity.Status);
+        dto.CreatedAt.ShouldBe(entity.CreatedAt);
+        dto.UpdatedAt.ShouldBe(entity.UpdatedAt);
+    }
+
+    [Fact]
+    public void ToEntity_IgnoresServerOwnedFields()
+    {
+        var dto = TestData.ValidCreateDto();
+
+        var entity = _sut.ToEntity(dto);
+
+        entity.Id.ShouldBe(Guid.Empty);
+        entity.Status.ShouldBe(default);
+        entity.CreatedAt.ShouldBe(default);
+        entity.UpdatedAt.ShouldBe(default);
+        entity.PatientName.ShouldBe(dto.PatientName);
+        entity.Email.ShouldBe(dto.Email);
+    }
+
+    [Fact]
+    public void ToDtoList_MapsAllEntities()
+    {
+        var entities = new List<Appointment> { TestData.SampleAppointment() }.AsReadOnly();
+
+        var dtos = _sut.ToDtoList(entities);
+
+        dtos.ShouldHaveSingleItem();
+        dtos[0].Id.ShouldBe(entities[0].Id);
+    }
+}

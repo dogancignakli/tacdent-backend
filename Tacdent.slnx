@@ -5,4 +5,7 @@
     <Project Path="src/Tacdent.Core/Tacdent.Core.csproj" />
     <Project Path="src/Tacdent.Data/Tacdent.Data.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Tacdent.UnitTests/Tacdent.UnitTests.csproj" />
+  </Folder>
 </Solution>
