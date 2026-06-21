@@ -1,0 +1,3 @@
+# Cursor plans — generated artifacts; attach manually when you want the agent to use one.
+# Keeps indexing lean and avoids pulling stale plans into every chat.
+.cursor/plans/
