@@ -23,6 +23,7 @@ Pure domain. No EF Core, ASP.NET, or third-party packages here.
 ## Result pattern (`Results/`)
 - Return `Result` (no value) or `Result<T>` from operations that can fail in expected ways.
 - Build failures from the `Error` factory by category: `Error.Validation`, `Error.NotFound`,
-  `Error.Conflict`, `Error.Failure` — each takes a stable `code` and a human `message`.
+  `Error.Conflict`, `Error.Unauthorized`, `Error.Failure` — each takes a stable `code` and a
+  human `message`. `ErrorType` is the matching enum.
 - Do not throw for expected failures and do not add new `ErrorType` values without also
-  mapping them in the Api layer's `ResultExtensions`.
+  mapping them in the Api layer's `ResultExtensions` (e.g. `Unauthorized -> 401`).

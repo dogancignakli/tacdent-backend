@@ -8,30 +8,32 @@ alwaysApply: false
 
 ## Controllers (`Controllers/`)
 - `[ApiController]`, `[Route("api/[controller]")]`, `ControllerBase`, **primary constructor**
-  injecting the `IXxxService` and the relevant `IXxxFactory`. Controllers stay thin: no business
-  logic, no EF, no validation calls.
-- Every action is `async`, takes a `CancellationToken`, and uses typed route constraints
-  (`{id:guid}`). Bind bodies with `[FromBody]`, filters with `[FromQuery]`.
+  injecting the service(s) and factory. Controllers stay thin: no business logic, no EF, no
+  validation calls.
+- **Default to `[Authorize]` at the class level.** Mark only the genuinely public actions
+  `[AllowAnonymous]` (public booking `Create`, `auth/login`). See `AppointmentsController`.
+- Every action that does I/O is `async`, takes a `CancellationToken`, and uses typed route
+  constraints (`{id:guid}`). Bind bodies with `[FromBody]`, filters with `[FromQuery]`.
 - Translate `Result` to HTTP via the extensions, never by hand:
   `result.ToOkResult(factory.ToResponse)`, `result.ToNoContentResult()`. For `Create`, check
   `result.IsFailure` -> `result.Error.ToProblemResult()`, else `CreatedAtAction(...)`.
 
 ## ViewModels (`ViewModels/`)
-- Requests are plain `class` with init defaults (`= string.Empty`); responses are `record`s.
-  These are the wire shapes — keep field names aligned with the frontend's `src/types`.
-- **No validation attributes on ViewModels** — validation is done by FluentValidation (below).
+- Requests are plain `class` with init defaults (`= string.Empty`); responses are `record`s
+  (e.g. `LoginResponse`). These are the wire shapes — keep field names aligned with the frontend's
+  `src/types`. **No validation attributes** — FluentValidation handles it.
 
 ## Validation (`Validators/`)
-- One `XxxRequestValidator : AbstractValidator<XxxRequest>` per request. Rules run automatically
-  through the global `FluentValidationFilter` (registered in `Program.cs`); don't call validators
-  in controllers. Register new validators via `AddValidatorsFromAssemblyContaining<...>`.
+- One `XxxRequestValidator : AbstractValidator<XxxRequest>` per request, run automatically through
+  the global `FluentValidationFilter`. Register new validators via
+  `AddValidatorsFromAssemblyContaining<...>`. Don't call validators in controllers.
 
 ## Factories (`Factories/`)
 - An `IXxxFactory`/`XxxFactory` maps `Request -> DTO` and `DTO -> Response`. Do input cleanup here
-  (e.g. `.Trim()`, empty-note -> `null`). Keep mapping out of controllers.
+  (`.Trim()`, empty-note -> `null`). Keep mapping out of controllers.
 
 ## Mapping the rest
-- `Result` -> HTTP status lives in `Extensions/ResultExtensions` (`ErrorType` -> 400/404/409/500);
-  error body is `{ code, message }`. JSON is camelCase with `JsonStringEnumConverter` and the
-  custom `TimeOnlyJsonConverter` (accepts `HH:mm` / `HH:mm:ss`, writes `HH:mm:ss`) — both set in
-  `Program.cs`. Register new presentation services in `AddPresentationLayer`.
+- `Result` -> HTTP status lives in `Extensions/ResultExtensions`:
+  Validation 400, NotFound 404, Conflict 409, **Unauthorized 401**, else 500. Error body is
+  `{ code, message }`. JSON is camelCase with `JsonStringEnumConverter` + the custom
+  `TimeOnlyJsonConverter`. Register new presentation services in `AddPresentationLayer`.

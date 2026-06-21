@@ -1,10 +1,13 @@
 ---
-description: Data layer conventions (EF Core, repositories, Unit of Work, migrations)
+description: Data layer conventions (EF Core + SQL Server, repositories, Unit of Work, migrations)
 globs: src/Tacdent.Data/**/*.cs
 alwaysApply: false
 ---
 
-# Data layer (EF Core + PostgreSQL)
+# Data layer (EF Core + SQL Server)
+
+Provider is **SQL Server** (`UseSqlServer`), configured in `AddDataLayer` from the
+`DefaultConnection` connection string. Local dev runs SQL Server in Docker (see `docker-compose.yml`).
 
 ## Repositories & Unit of Work
 - Generic base `Repository<T>` (primary ctor takes `TacdentDbContext`) exposes
@@ -23,8 +26,11 @@ alwaysApply: false
   `IsRequired`, indexes, and store enums as strings via `.HasConversion<string>()`.
 - Audit fields are handled centrally by `AuditableEntityInterceptor` (registered in DI and added
   to the context). Don't replicate that logic elsewhere.
+- SQL Server's default collation is **case-insensitive** (unlike the old Postgres setup). Don't
+  rely on case-sensitive string comparisons; if exact-case matching is ever needed, be explicit.
 
 ## Migrations
-- After changing an entity or config: `dotnet ef migrations add <Name>` (the app applies
-  migrations automatically on startup via `Database.MigrateAsync()`). Don't hand-edit the model
-  snapshot.
+- After changing an entity or config: `dotnet ef migrations add <Name>`. EF tooling builds the
+  context through `DesignTimeDbContextFactory` (reads the `TACDENT_DB` env var, falls back to the
+  local dev connection string). The app applies migrations on startup via `Database.MigrateAsync()`.
+- Don't hand-edit the model snapshot. Store DateTimes as UTC (the audit interceptor already does).

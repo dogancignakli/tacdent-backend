@@ -1,0 +1,35 @@
+---
+description: Authentication & authorization conventions (JWT bearer, shared-password login)
+globs: src/Tacdent.Api/Auth/**/*.cs,src/Tacdent.Api/Controllers/AuthController.cs,src/Tacdent.Application/Services/AuthService.cs,src/Tacdent.Application/Services/Interfaces/IAuthService.cs,src/Tacdent.Application/Options/**/*.cs,src/Tacdent.Application/Errors/AuthErrors.cs
+alwaysApply: false
+---
+
+# Auth (JWT bearer + shared password)
+
+A single shared admin password is exchanged for a JWT; the token then authorizes the management
+endpoints. There is no Users table — adding multiple accounts later means a Users table + hashing.
+
+## Layering (keep these concerns separated)
+- **Application** owns the credential check: `IAuthService.Authenticate(password)` returns `Result`
+  (`Result.Success()` or `Result.Failure(AuthErrors.InvalidCredentials)`). `AuthService` reads the
+  password from `IOptions<AuthOptions>` — never from raw config. `AuthErrors.InvalidCredentials`
+  is an `Error.Unauthorized(...)`.
+- **Api** owns token minting: `IJwtTokenGenerator.GenerateToken()` returns `(token, expiresAt)`,
+  built from `JwtOptions`. It's a presentation concern in `Api/Auth/`, registered **Singleton**.
+- `AuthController` (`POST /api/auth/login`, `[AllowAnonymous]`) calls `Authenticate`; on
+  `IsFailure` returns `result.Error.ToProblemResult()` (401), else returns `LoginResponse(token, expiresAt)`.
+
+## Program.cs wiring (don't reorder)
+- Bind `JwtOptions` via `Configure<JwtOptions>(...GetSection(JwtOptions.SectionName))`.
+- `AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(...)` with
+  `TokenValidationParameters` validating issuer/audience/lifetime/signing key from `JwtOptions`.
+- `AddAuthorization()`, and call **`app.UseAuthentication()` before `app.UseAuthorization()`**.
+
+## Protecting endpoints
+- Management controllers are `[Authorize]` at the class level; only public actions are
+  `[AllowAnonymous]`. A new admin-only endpoint needs no extra attribute — it inherits `[Authorize]`.
+
+## Security must-dos (still open / keep in mind)
+- `Jwt:Key` must be long and random (32+ bytes) and **never committed**; same for `Auth:AdminPassword`.
+- The login endpoint has no brute-force protection yet — add rate limiting before going live, since
+  one password guards all patient data.
