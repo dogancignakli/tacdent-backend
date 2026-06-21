@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Tacdent.Api.Auth;
 using Tacdent.Api.Extensions;
 using Tacdent.Api.ViewModels;
@@ -13,6 +14,7 @@ public class AuthController(IAuthService authService, IJwtTokenGenerator jwtToke
 {
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("login")]
     public IActionResult Login([FromBody] LoginRequest request)
     {
         var result = authService.Authenticate(request.Password);

@@ -76,15 +76,28 @@ If you previously ran the PostgreSQL container from an older compose file, clean
 docker compose up -d --remove-orphans
 ```
 
-### 2. Run the API
+### 2. Set local dev secrets (required before first run)
+
+Secrets are **not** in git. The API refuses to start without `Auth:AdminPassword` and a `Jwt:Key` of at least 32 characters.
 
 ```bash
-dotnet run --project src/Tacdent.Api
+dotnet user-secrets set "Auth:AdminPassword" "<your-dev-password>" --project src/Tacdent.Api
+dotnet user-secrets set "Jwt:Key" "<your-32+-char-signing-key>" --project src/Tacdent.Api
+```
+
+Copy `src/Tacdent.Api/appsettings.Development.json` from a teammate or create one locally for the SQL Server connection string (file is gitignored).
+
+### 3. Run the API
+
+```bash
+dotnet run --project src/Tacdent.Api --launch-profile http
 ```
 
 The API runs at [http://localhost:5065](http://localhost:5065). Migrations are applied automatically on startup.
 
-### 3. Run the frontend (optional)
+**VS Code / Cursor:** press **F5** with the `.vscode/launch.json` config — it uses the `http` profile on port `5065`.
+
+### 4. Run the frontend (optional)
 
 ```bash
 cd ../tacdent-frontend
@@ -109,13 +122,20 @@ Scalar is only enabled when `ASPNETCORE_ENVIRONMENT=Development` (default in `la
 
 Staff access uses a **shared admin password** exchanged for a JWT. Patient booking stays anonymous.
 
-| Setting | Location | Dev value |
+| Setting | Location | Dev setup |
 |---------|----------|-----------|
-| Admin password | `Auth:AdminPassword` | `tacdent-admin-dev` (in `appsettings.Development.json`) |
-| JWT signing key | `Jwt:Key` | set in `appsettings.Development.json` |
-| Token lifetime | `Jwt:ExpiryMinutes` | `480` (8 hours) |
+| Admin password | `Auth:AdminPassword` | .NET user-secrets (see below) |
+| JWT signing key | `Jwt:Key` | .NET user-secrets (min 32 chars) |
+| Token lifetime | `Jwt:ExpiryMinutes` | `480` (8 hours) in `appsettings.Development.json` |
 
-**Login** — `POST /api/auth/login` with `{ "password": "..." }` returns `{ "token": "...", "expiresAt": "..." }`.
+**Local dev secrets** — `appsettings.Development.json` is gitignored. Set secrets once per machine:
+
+```bash
+dotnet user-secrets set "Auth:AdminPassword" "<your-dev-password>" --project src/Tacdent.Api
+dotnet user-secrets set "Jwt:Key" "<your-32+-char-signing-key>" --project src/Tacdent.Api
+```
+
+**Login** — `POST /api/auth/login` with `{ "password": "..." }` returns `{ "token": "...", "expiresAt": "..." }`. Rate limited to **5 attempts per IP per 5 minutes** (`429` when exceeded).
 
 **Protected requests** — send `Authorization: Bearer <token>` on appointment management endpoints.
 
@@ -157,7 +177,7 @@ curl -X POST http://localhost:5065/api/appointments \
 # Login
 TOKEN=$(curl -s -X POST http://localhost:5065/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"password":"tacdent-admin-dev"}' | jq -r .token)
+  -d '{"password":"<your-dev-password>"}' | jq -r .token)
 
 # List all pending requests
 curl -s http://localhost:5065/api/appointments?status=Pending \
@@ -166,6 +186,20 @@ curl -s http://localhost:5065/api/appointments?status=Pending \
 
 Validation failures return `400` with `{ "message": "Validation failed.", "errors": { ... } }`.
 Domain failures (e.g. not found) return the matching status with `{ "code": "...", "message": "..." }`.
+
+## Security
+
+| Measure | Where |
+|---------|--------|
+| JWT on management endpoints | `AppointmentsController` (`[Authorize]`); public `POST` only |
+| Login rate limiting | 5 attempts / IP / 5 min on `POST /api/auth/login` (`429`) |
+| Constant-time password check | `AuthService` |
+| Fail-fast on weak/missing secrets | `Program.cs` (blank password or `Jwt:Key` &lt; 32 chars) |
+| Security response headers | `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` |
+| HSTS | Enabled outside Development |
+| Secrets not in git | `appsettings.Development.json` gitignored; use user-secrets locally, env vars in production |
+
+For production, also use HTTPS termination at a reverse proxy, set `Cors:Origins` to your real frontend URL, and use a least-privilege SQL login (not `sa`).
 
 ## Configuration
 
@@ -176,7 +210,7 @@ Domain failures (e.g. not found) return the matching status with `{ "code": "...
 | `Auth:AdminPassword` | Shared staff password |
 | `Jwt:Issuer`, `Jwt:Audience`, `Jwt:Key`, `Jwt:ExpiryMinutes` | JWT token settings |
 
-Dev overrides live in `appsettings.Development.json`. Base `appsettings.json` leaves secrets empty — fill them per environment.
+Dev non-secret settings live in `appsettings.Development.json` (gitignored). Base `appsettings.json` leaves secrets empty — use user-secrets locally or environment variables in production.
 
 ## Migrations
 

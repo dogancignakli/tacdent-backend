@@ -11,6 +11,7 @@ obj/
 ## Environment
 .env
 appsettings.*.local.json
+src/Tacdent.Api/appsettings.Development.json
 
 ## OS
 .DS_Store

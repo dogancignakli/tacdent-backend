@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -9,6 +11,7 @@ using Tacdent.Api.Auth;
 using Tacdent.Api.Filters;
 using Tacdent.Api.Json;
 using Tacdent.Application;
+using Tacdent.Application.Options;
 using Tacdent.Data;
 using Tacdent.Data.Context;
 
@@ -30,6 +33,20 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptio
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("Jwt configuration is missing.");
 
+var adminPassword = builder.Configuration.GetSection(AuthOptions.SectionName)["AdminPassword"] ?? string.Empty;
+
+if (string.IsNullOrWhiteSpace(adminPassword))
+{
+    throw new InvalidOperationException(
+        "Auth:AdminPassword is not configured. Set it via user secrets, environment variables, or appsettings.");
+}
+
+if (string.IsNullOrWhiteSpace(jwtOptions.Key) || jwtOptions.Key.Length < 32)
+{
+    throw new InvalidOperationException(
+        "Jwt:Key must be at least 32 characters. Set it via user secrets, environment variables, or appsettings.");
+}
+
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -47,6 +64,19 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("login", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(5),
+            }));
+});
 
 builder.Services.AddDataLayer(builder.Configuration);
 builder.Services.AddApplicationLayer(builder.Configuration);
@@ -80,11 +110,25 @@ if (app.Environment.IsDevelopment())
         options.WithTitle("TacDent API");
     });
 }
+else
+{
+    app.UseHsts();
+}
+
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers.XContentTypeOptions = "nosniff";
+    headers.XFrameOptions = "DENY";
+    headers["Referrer-Policy"] = "no-referrer";
+    await next();
+});
 
 app.UseCors("Frontend");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 
 app.Run();

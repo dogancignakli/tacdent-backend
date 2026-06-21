@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Extensions.Options;
 using Tacdent.Application.Errors;
 using Tacdent.Application.Options;
@@ -10,7 +12,11 @@ public class AuthService(IOptions<AuthOptions> options) : IAuthService
 {
     public Result Authenticate(string password)
     {
-        if (string.IsNullOrEmpty(password) || password != options.Value.AdminPassword)
+        var expected = Encoding.UTF8.GetBytes(options.Value.AdminPassword);
+        var actual = Encoding.UTF8.GetBytes(password ?? string.Empty);
+
+        if (expected.Length != actual.Length ||
+            !CryptographicOperations.FixedTimeEquals(expected, actual))
         {
             return Result.Failure(AuthErrors.InvalidCredentials);
         }
