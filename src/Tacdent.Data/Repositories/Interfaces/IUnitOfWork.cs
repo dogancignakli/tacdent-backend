@@ -10,5 +10,7 @@ public interface IUnitOfWork
 
     IServiceRepository Services { get; }
 
+    IUserRepository Users { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

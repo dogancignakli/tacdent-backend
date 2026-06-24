@@ -7,6 +7,7 @@ public class TacdentDbContext(DbContextOptions<TacdentDbContext> options) : DbCo
 {
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<DentalService> Services => Set<DentalService>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

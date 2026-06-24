@@ -3,20 +3,25 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Tacdent.Core.DTOs;
 
 namespace Tacdent.Api.Auth;
 
 public class JwtTokenGenerator(IOptions<JwtOptions> options) : IJwtTokenGenerator
 {
-    public (string Token, DateTime ExpiresAt) GenerateToken()
+    public (string Token, DateTime ExpiresAt) GenerateToken(AuthenticatedUserDto user)
     {
         var jwtOptions = options.Value;
         var expiresAt = DateTime.UtcNow.AddMinutes(jwtOptions.ExpiryMinutes);
 
         var claims = new[]
         {
-            new Claim(ClaimTypes.Name, "admin"),
-            new Claim(ClaimTypes.Role, "Admin"),
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.Email),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role.ToString()),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key));

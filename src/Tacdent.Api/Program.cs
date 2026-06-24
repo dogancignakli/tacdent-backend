@@ -100,6 +100,8 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<TacdentDbContext>();
     await dbContext.Database.MigrateAsync();
+
+    await AdminSeeder.SeedAsync(scope.ServiceProvider);
 }
 
 if (app.Environment.IsDevelopment())

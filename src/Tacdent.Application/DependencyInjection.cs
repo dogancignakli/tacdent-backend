@@ -19,6 +19,8 @@ public static class DependencyInjection
         services.AddSingleton<AppointmentMapper>();
         services.AddSingleton<ServiceMapper>();
 
+        services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
+
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAppointmentService, AppointmentService>();
         services.AddScoped<IServiceCatalogService, ServiceCatalogService>();

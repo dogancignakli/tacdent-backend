@@ -15,16 +15,16 @@ public class AuthController(IAuthService authService, IJwtTokenGenerator jwtToke
     [HttpPost("login")]
     [AllowAnonymous]
     [EnableRateLimiting("login")]
-    public IActionResult Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
-        var result = authService.Authenticate(request.Password);
+        var result = await authService.AuthenticateAsync(request.Email, request.Password, cancellationToken);
 
         if (result.IsFailure)
         {
             return result.Error.ToProblemResult();
         }
 
-        var (token, expiresAt) = jwtTokenGenerator.GenerateToken();
+        var (token, expiresAt) = jwtTokenGenerator.GenerateToken(result.Value);
         return Ok(new LoginResponse(token, expiresAt));
     }
 }

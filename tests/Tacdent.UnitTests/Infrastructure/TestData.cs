@@ -46,4 +46,20 @@ internal static class TestData
             CreatedAt = AuditTimestamp,
             UpdatedAt = AuditTimestamp,
         };
+
+    internal static User SampleUser(
+        string email = "admin@tacdent.local",
+        string passwordHash = "hash",
+        UserRole role = UserRole.Admin,
+        bool isActive = true) =>
+        new()
+        {
+            Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            Email = email,
+            PasswordHash = passwordHash,
+            Role = role,
+            IsActive = isActive,
+            CreatedAt = AuditTimestamp,
+            UpdatedAt = AuditTimestamp,
+        };
 }

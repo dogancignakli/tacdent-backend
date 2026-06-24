@@ -2,13 +2,15 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.Extensions.Options;
 using Tacdent.Api.Auth;
+using Tacdent.Core.DTOs;
+using Tacdent.Core.Entities;
 
 namespace Tacdent.UnitTests.Api;
 
 public class JwtTokenGeneratorTests
 {
     [Fact]
-    public void GenerateToken_ReturnsValidJwtWithExpectedClaims()
+    public void GenerateToken_ReturnsValidJwtWithPerUserClaims()
     {
         var options = Options.Create(new JwtOptions
         {
@@ -18,9 +20,13 @@ public class JwtTokenGeneratorTests
             ExpiryMinutes = 60,
         });
         var sut = new JwtTokenGenerator(options);
+        var user = new AuthenticatedUserDto(
+            Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            "admin@tacdent.local",
+            UserRole.Admin);
         var before = DateTime.UtcNow;
 
-        var (token, expiresAt) = sut.GenerateToken();
+        var (token, expiresAt) = sut.GenerateToken(user);
 
         token.ShouldNotBeNullOrWhiteSpace();
         expiresAt.ShouldBeGreaterThan(before);
@@ -32,6 +38,8 @@ public class JwtTokenGeneratorTests
         jwt.Issuer.ShouldBe("Tacdent-Test");
         jwt.Audiences.ShouldContain("Tacdent-Test-Audience");
         jwt.Claims.ShouldContain(c => c.Type == ClaimTypes.Role && c.Value == "Admin");
-        jwt.Claims.ShouldContain(c => c.Type == ClaimTypes.Name && c.Value == "admin");
+        jwt.Claims.ShouldContain(c => c.Type == ClaimTypes.Name && c.Value == user.Email);
+        jwt.Claims.ShouldContain(c => c.Type == ClaimTypes.NameIdentifier && c.Value == user.Id.ToString());
+        jwt.Claims.ShouldContain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == user.Id.ToString());
     }
 }

@@ -6,11 +6,14 @@ namespace Tacdent.Data.Repositories;
 public class UnitOfWork(
     TacdentDbContext context,
     IAppointmentRepository appointments,
-    IServiceRepository services) : IUnitOfWork
+    IServiceRepository services,
+    IUserRepository users) : IUnitOfWork
 {
     public IAppointmentRepository Appointments { get; } = appointments;
 
     public IServiceRepository Services { get; } = services;
+
+    public IUserRepository Users { get; } = users;
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => context.SaveChangesAsync(cancellationToken);
