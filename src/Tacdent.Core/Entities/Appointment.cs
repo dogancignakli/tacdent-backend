@@ -13,4 +13,8 @@ public class Appointment : AuditableEntity
     public required string ServiceType { get; set; }
     public string? Notes { get; set; }
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Pending;
+
+    public Guid? AssignedUserId { get; set; }
+
+    public User? AssignedUser { get; set; }
 }

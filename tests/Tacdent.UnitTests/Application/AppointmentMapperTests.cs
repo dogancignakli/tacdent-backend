@@ -27,6 +27,22 @@ public class AppointmentMapperTests
         dto.Status.ShouldBe(entity.Status);
         dto.CreatedAt.ShouldBe(entity.CreatedAt);
         dto.UpdatedAt.ShouldBe(entity.UpdatedAt);
+        dto.AssignedUserId.ShouldBeNull();
+        dto.AssignedUserEmail.ShouldBeNull();
+    }
+
+    [Fact]
+    public void ToDto_MapsAssigneeFields()
+    {
+        var assignee = TestData.SampleUser("staff@tacdent.local", "hash", UserRole.Staff);
+        var entity = TestData.SampleAppointment();
+        entity.AssignedUserId = assignee.Id;
+        entity.AssignedUser = assignee;
+
+        var dto = _sut.ToDto(entity);
+
+        dto.AssignedUserId.ShouldBe(assignee.Id);
+        dto.AssignedUserEmail.ShouldBe(assignee.Email);
     }
 
     [Fact]

@@ -13,5 +13,9 @@ public interface IAppointmentFactory
 
     UpdateAppointmentStatusDto ToUpdateStatusDto(UpdateAppointmentStatusRequest request);
 
+    AssignAppointmentDto ToAssignDto(AssignAppointmentRequest request);
+
+    AppointmentQuery ToQuery(AppointmentQueryRequest request);
+
     AppointmentResponse ToResponse(AppointmentDto dto);
 }

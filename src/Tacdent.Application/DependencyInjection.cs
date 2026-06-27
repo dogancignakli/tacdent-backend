@@ -18,12 +18,14 @@ public static class DependencyInjection
         // Mapperly mappers are stateless generated classes.
         services.AddSingleton<AppointmentMapper>();
         services.AddSingleton<ServiceMapper>();
+        services.AddSingleton<UserMapper>();
 
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
 
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAppointmentService, AppointmentService>();
         services.AddScoped<IServiceCatalogService, ServiceCatalogService>();
+        services.AddScoped<IUserManagementService, UserManagementService>();
 
         return services;
     }

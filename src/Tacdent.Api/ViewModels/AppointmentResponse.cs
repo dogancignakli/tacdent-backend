@@ -14,5 +14,7 @@ public record AppointmentResponse(
     string? Notes,
     AppointmentStatus Status,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    Guid? AssignedUserId,
+    string? AssignedUserEmail
 );

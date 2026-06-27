@@ -25,6 +25,6 @@ public class AuthController(IAuthService authService, IJwtTokenGenerator jwtToke
         }
 
         var (token, expiresAt) = jwtTokenGenerator.GenerateToken(result.Value);
-        return Ok(new LoginResponse(token, expiresAt));
+        return Ok(new LoginResponse(token, expiresAt, result.Value.Role.ToString()));
     }
 }

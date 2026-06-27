@@ -11,6 +11,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IAppointmentFactory, AppointmentFactory>();
         services.AddScoped<IServiceFactory, ServiceFactory>();
+        services.AddScoped<IUserFactory, UserFactory>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
         services.AddValidatorsFromAssemblyContaining<CreateAppointmentRequestValidator>();

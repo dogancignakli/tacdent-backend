@@ -37,7 +37,8 @@ public class JwtTokenGeneratorTests
 
         jwt.Issuer.ShouldBe("Tacdent-Test");
         jwt.Audiences.ShouldContain("Tacdent-Test-Audience");
-        jwt.Claims.ShouldContain(c => c.Type == ClaimTypes.Role && c.Value == "Admin");
+        jwt.Claims.ShouldContain(c => c.Type == ClaimTypes.Role && c.Value == Roles.Admin);
+        Roles.Admin.ShouldBe(nameof(UserRole.Admin));
         jwt.Claims.ShouldContain(c => c.Type == ClaimTypes.Name && c.Value == user.Email);
         jwt.Claims.ShouldContain(c => c.Type == ClaimTypes.NameIdentifier && c.Value == user.Id.ToString());
         jwt.Claims.ShouldContain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == user.Id.ToString());

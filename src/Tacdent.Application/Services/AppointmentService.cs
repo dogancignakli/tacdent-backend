@@ -10,12 +10,16 @@ namespace Tacdent.Application.Services;
 
 public class AppointmentService(IUnitOfWork unitOfWork, AppointmentMapper mapper) : IAppointmentService
 {
-    public async Task<IReadOnlyList<AppointmentDto>> GetAllAsync(
-        AppointmentStatus? status,
+    public async Task<PagedResult<AppointmentDto>> GetPagedAsync(
+        AppointmentQuery query,
         CancellationToken cancellationToken = default)
     {
-        var appointments = await unitOfWork.Appointments.GetAllAsync(status, cancellationToken);
-        return mapper.ToDtoList(appointments);
+        var page = await unitOfWork.Appointments.GetPagedAsync(query, cancellationToken);
+        return new PagedResult<AppointmentDto>(
+            mapper.ToDtoList(page.Items),
+            page.Page,
+            page.PageSize,
+            page.TotalCount);
     }
 
     public async Task<Result<AppointmentDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -76,5 +80,44 @@ public class AppointmentService(IUnitOfWork unitOfWork, AppointmentMapper mapper
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
+    }
+
+    public async Task<Result<AppointmentDto>> AssignAsync(
+        Guid id,
+        AssignAppointmentDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        var appointment = await unitOfWork.Appointments.GetByIdAsync(id, cancellationToken);
+        if (appointment is null)
+        {
+            return Result.Failure<AppointmentDto>(AppointmentErrors.NotFound(id));
+        }
+
+        if (dto.AssignedUserId is null)
+        {
+            appointment.AssignedUserId = null;
+            appointment.AssignedUser = null;
+        }
+        else
+        {
+            var assignee = await unitOfWork.Users.GetByIdAsync(dto.AssignedUserId.Value, cancellationToken);
+            if (assignee is null)
+            {
+                return Result.Failure<AppointmentDto>(UserErrors.AssigneeNotFound(dto.AssignedUserId.Value));
+            }
+
+            if (!assignee.IsActive)
+            {
+                return Result.Failure<AppointmentDto>(UserErrors.InactiveAssignee);
+            }
+
+            appointment.AssignedUserId = assignee.Id;
+            appointment.AssignedUser = assignee;
+        }
+
+        unitOfWork.Appointments.Update(appointment);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Result.Success(mapper.ToDto(appointment));
     }
 }
