@@ -39,13 +39,13 @@ Api ──> Application ──> Data ──> Core
 ### Key patterns
 
 - **Generic repository + Unit of Work** — repositories never call `SaveChanges`; the `IUnitOfWork` commits once per use case.
-- **Entity-specific repositories** — e.g. `IAppointmentRepository.GetAllAsync(status)` for filtered queries.
+- **Entity-specific repositories** — e.g. `IAppointmentRepository.GetPagedAsync(query)` for filtered, sorted, paginated queries at the datasource.
 - **Audit fields** — every entity inherits `AuditableEntity` (`CreatedAt`, `UpdatedAt`). The `AuditableEntityInterceptor` stamps them automatically on `SaveChanges`, so services never set them by hand.
 - **Result pattern** — services return `Result` / `Result<T>`; `ResultExtensions` maps `ErrorType` to HTTP status codes (Validation→400, NotFound→404, Conflict→409, Unauthorized→401).
 - **Mapperly** — compile-time source-generated mapping (no runtime reflection) in the Application layer.
 - **FluentValidation** — validators live in the Api layer and run via `FluentValidationFilter` before controller actions.
 - **Manual factories** — `IAppointmentFactory` / `IServiceFactory` convert ViewModels ↔ Core DTOs at the HTTP boundary.
-- **JWT authentication** — staff log in with a shared admin password; protected endpoints require a `Bearer` token.
+- **JWT authentication** — staff log in with email + password; JWT carries role claims (`Admin`, `Staff`). Protected endpoints require a `Bearer` token.
 
 ## Quick start
 
@@ -120,11 +120,12 @@ Scalar is only enabled when `ASPNETCORE_ENVIRONMENT=Development` (default in `la
 
 ## Authentication
 
-Staff access uses a **shared admin password** exchanged for a JWT. Patient booking stays anonymous.
+Staff access uses **per-user accounts** (email + password) stored in SQL Server. On first run, if the users table is empty, `AdminSeeder` creates an initial admin from `Auth:AdminEmail` / `Auth:AdminPassword` (default email `admin@tacdent.local`). Patient booking stays anonymous.
 
 | Setting | Location | Dev setup |
 |---------|----------|-----------|
-| Admin password | `Auth:AdminPassword` | .NET user-secrets (see below) |
+| Bootstrap admin email | `Auth:AdminEmail` | Optional; defaults to `admin@tacdent.local` |
+| Bootstrap admin password | `Auth:AdminPassword` | .NET user-secrets (see below) |
 | JWT signing key | `Jwt:Key` | .NET user-secrets (min 32 chars) |
 | Token lifetime | `Jwt:ExpiryMinutes` | `480` (8 hours) in `appsettings.Development.json` |
 
@@ -133,11 +134,15 @@ Staff access uses a **shared admin password** exchanged for a JWT. Patient booki
 ```bash
 dotnet user-secrets set "Auth:AdminPassword" "<your-dev-password>" --project src/Tacdent.Api
 dotnet user-secrets set "Jwt:Key" "<your-32+-char-signing-key>" --project src/Tacdent.Api
+# optional:
+dotnet user-secrets set "Auth:AdminEmail" "admin@tacdent.local" --project src/Tacdent.Api
 ```
 
-**Login** — `POST /api/auth/login` with `{ "password": "..." }` returns `{ "token": "...", "expiresAt": "..." }`. Rate limited to **5 attempts per IP per 5 minutes** (`429` when exceeded).
+**Login** — `POST /api/auth/login` with `{ "email": "...", "password": "..." }` returns `{ "token": "...", "expiresAt": "...", "role": "Admin" | "Staff" }`. Rate limited to **5 attempts per IP per 5 minutes** (`429` when exceeded).
 
-**Protected requests** — send `Authorization: Bearer <token>` on appointment management endpoints.
+**Protected requests** — send `Authorization: Bearer <token>` on management endpoints. Role-restricted actions use `[Authorize(Roles = Roles.Admin)]` (e.g. delete appointments, user management, assignee updates).
+
+The Next.js frontend stores the JWT in an **httpOnly cookie** via its BFF (`/api/auth/login`); direct API clients still use the `Bearer` header.
 
 For production, set strong `Auth:AdminPassword` and `Jwt:Key` via environment variables or user secrets. Do not commit real credentials.
 
@@ -146,12 +151,42 @@ For production, set strong `Auth:AdminPassword` and `Jwt:Key` via environment va
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/services` | — | List active dental services |
-| POST | `/api/auth/login` | — | Staff login (returns JWT) |
+| POST | `/api/auth/login` | — | Staff login (returns JWT + role) |
 | POST | `/api/appointments` | — | Create an appointment request (public) |
-| GET | `/api/appointments` | Bearer | List appointments (optional `?status=Pending`) |
+| GET | `/api/appointments` | Bearer | Paginated list — see query params below |
 | GET | `/api/appointments/{id}` | Bearer | Get one appointment |
 | PATCH | `/api/appointments/{id}/status` | Bearer | Update status |
-| DELETE | `/api/appointments/{id}` | Bearer | Delete appointment |
+| PATCH | `/api/appointments/{id}/assignee` | Admin | Assign or clear assignee |
+| DELETE | `/api/appointments/{id}` | Admin | Delete appointment |
+| GET | `/api/users` | Admin | List staff accounts |
+| POST | `/api/users` | Admin | Create staff account |
+| PATCH | `/api/users/{id}/role` | Admin | Change user role |
+| PATCH | `/api/users/{id}/status` | Admin | Activate / deactivate user |
+| POST | `/api/users/{id}/password` | Admin | Reset user password |
+
+**Appointment list query params** (all optional except defaults):
+
+| Param | Default | Values |
+|-------|---------|--------|
+| `status` | — | `Pending`, `Confirmed`, `Cancelled`, `Completed` |
+| `page` | `1` | `>= 1` |
+| `pageSize` | `20` | `1`–`100` |
+| `sortBy` | `PreferredDate` | `PreferredDate`, `CreatedAt`, `Status` |
+| `sortDirection` | `Desc` | `Asc`, `Desc` |
+
+**Paged response shape:**
+
+```json
+{
+  "items": [ /* AppointmentResponse[] */ ],
+  "page": 1,
+  "pageSize": 20,
+  "totalCount": 42,
+  "totalPages": 3,
+  "hasNextPage": true,
+  "hasPreviousPage": false
+}
+```
 
 JSON is **camelCase**. Enums are **strings** (`Pending`, `Confirmed`, `Cancelled`, `Completed`). Dates are `"YYYY-MM-DD"`; times are `"HH:mm"` or `"HH:mm:ss"`.
 
@@ -174,13 +209,13 @@ curl -X POST http://localhost:5065/api/appointments \
 ### Example: staff login + list appointments
 
 ```bash
-# Login
+# Login (first-run default email: admin@tacdent.local)
 TOKEN=$(curl -s -X POST http://localhost:5065/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"password":"<your-dev-password>"}' | jq -r .token)
+  -d '{"email":"admin@tacdent.local","password":"<your-dev-password>"}' | jq -r .token)
 
-# List all pending requests
-curl -s http://localhost:5065/api/appointments?status=Pending \
+# List pending requests (page 1, sorted by preferred date desc)
+curl -s "http://localhost:5065/api/appointments?status=Pending&page=1&pageSize=20&sortBy=PreferredDate&sortDirection=Desc" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -192,6 +227,7 @@ Domain failures (e.g. not found) return the matching status with `{ "code": "...
 | Measure | Where |
 |---------|--------|
 | JWT on management endpoints | `AppointmentsController` (`[Authorize]`); public `POST` only |
+| Role-based authorization | `Admin` vs `Staff` — delete, assignee, and `/api/users` are Admin-only |
 | Login rate limiting | 5 attempts / IP / 5 min on `POST /api/auth/login` (`429`) |
 | Constant-time password check | `AuthService` |
 | Fail-fast on weak/missing secrets | `Program.cs` (blank password or `Jwt:Key` &lt; 32 chars) |
@@ -207,7 +243,8 @@ For production, also use HTTPS termination at a reverse proxy, set `Cors:Origins
 |---------|---------|
 | `ConnectionStrings:DefaultConnection` | SQL Server connection string |
 | `Cors:Origins` | Allowed frontend origins (default `http://localhost:3000`) |
-| `Auth:AdminPassword` | Shared staff password |
+| `Auth:AdminEmail` | Bootstrap admin email (first run only; default `admin@tacdent.local`) |
+| `Auth:AdminPassword` | Bootstrap admin password (first run only) |
 | `Jwt:Issuer`, `Jwt:Audience`, `Jwt:Key`, `Jwt:ExpiryMinutes` | JWT token settings |
 
 Dev non-secret settings live in `appsettings.Development.json` (gitignored). Base `appsettings.json` leaves secrets empty — use user-secrets locally or environment variables in production.
