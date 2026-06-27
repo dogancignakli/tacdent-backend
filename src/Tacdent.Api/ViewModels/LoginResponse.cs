@@ -1,3 +1,3 @@
 namespace Tacdent.Api.ViewModels;
 
-public record LoginResponse(string Token, DateTime ExpiresAt);
+public record LoginResponse(string Token, DateTime ExpiresAt, string Role);

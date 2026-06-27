@@ -11,14 +11,16 @@ namespace Tacdent.Application.Mapping;
 [Mapper]
 public partial class AppointmentMapper
 {
+    [MapProperty(nameof(Appointment.AssignedUser) + "." + nameof(User.Email), nameof(AppointmentDto.AssignedUserEmail))]
     public partial AppointmentDto ToDto(Appointment entity);
 
     public partial IReadOnlyList<AppointmentDto> ToDtoList(IReadOnlyList<Appointment> entities);
 
-    // Id, Status and audit fields are assigned by the service / interceptor, not from the create DTO.
     [MapperIgnoreTarget(nameof(Appointment.Id))]
     [MapperIgnoreTarget(nameof(Appointment.Status))]
     [MapperIgnoreTarget(nameof(Appointment.CreatedAt))]
     [MapperIgnoreTarget(nameof(Appointment.UpdatedAt))]
+    [MapperIgnoreTarget(nameof(Appointment.AssignedUserId))]
+    [MapperIgnoreTarget(nameof(Appointment.AssignedUser))]
     public partial Appointment ToEntity(CreateAppointmentDto dto);
 }

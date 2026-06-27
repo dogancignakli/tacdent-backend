@@ -22,5 +22,13 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
 
         builder.HasIndex(a => a.Status);
         builder.HasIndex(a => a.PreferredDate);
+
+        builder.HasOne(a => a.AssignedUser)
+            .WithMany()
+            .HasForeignKey(a => a.AssignedUserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(a => a.AssignedUserId);
     }
 }

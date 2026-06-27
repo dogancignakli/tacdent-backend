@@ -19,6 +19,11 @@ public static class ResultExtensions
             ? new NoContentResult()
             : result.Error.ToProblemResult();
 
+    public static IActionResult ToCreatedResult<TValue>(this Result<TValue> result, Func<TValue, object> map)
+        => result.IsSuccess
+            ? new CreatedResult(string.Empty, map(result.Value))
+            : result.Error.ToProblemResult();
+
     public static IActionResult ToProblemResult(this Error error)
     {
         var statusCode = error.Type switch

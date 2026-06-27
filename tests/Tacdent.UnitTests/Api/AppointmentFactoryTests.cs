@@ -64,6 +64,25 @@ public class AppointmentFactoryTests
     }
 
     [Fact]
+    public void ToQuery_MapsRequestFields()
+    {
+        var request = new AppointmentQueryRequest(
+            AppointmentStatus.Pending,
+            Page: 2,
+            PageSize: 10,
+            SortBy: AppointmentSortField.CreatedAt,
+            SortDirection: Tacdent.Core.DTOs.SortDirection.Asc);
+
+        var query = _sut.ToQuery(request);
+
+        query.Status.ShouldBe(AppointmentStatus.Pending);
+        query.Page.ShouldBe(2);
+        query.PageSize.ShouldBe(10);
+        query.SortBy.ShouldBe(AppointmentSortField.CreatedAt);
+        query.SortDirection.ShouldBe(Tacdent.Core.DTOs.SortDirection.Asc);
+    }
+
+    [Fact]
     public void ToResponse_MapsAllFields()
     {
         var dto = new AppointmentDto(
@@ -77,7 +96,9 @@ public class AppointmentFactoryTests
             "First visit",
             AppointmentStatus.Pending,
             TestData.AuditTimestamp,
-            TestData.AuditTimestamp);
+            TestData.AuditTimestamp,
+            null,
+            null);
 
         var response = _sut.ToResponse(dto);
 

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Tacdent.Data.Context;
 
@@ -11,9 +12,11 @@ using Tacdent.Data.Context;
 namespace Tacdent.Data.Migrations
 {
     [DbContext(typeof(TacdentDbContext))]
-    partial class TacdentDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260627201817_AddUserManagementAndAssignment")]
+    partial class AddUserManagementAndAssignment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

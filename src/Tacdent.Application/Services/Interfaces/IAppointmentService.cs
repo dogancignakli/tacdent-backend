@@ -6,8 +6,8 @@ namespace Tacdent.Application.Services.Interfaces;
 
 public interface IAppointmentService
 {
-    Task<IReadOnlyList<AppointmentDto>> GetAllAsync(
-        AppointmentStatus? status,
+    Task<PagedResult<AppointmentDto>> GetPagedAsync(
+        AppointmentQuery query,
         CancellationToken cancellationToken = default);
 
     Task<Result<AppointmentDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
@@ -22,4 +22,9 @@ public interface IAppointmentService
         CancellationToken cancellationToken = default);
 
     Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<Result<AppointmentDto>> AssignAsync(
+        Guid id,
+        AssignAppointmentDto dto,
+        CancellationToken cancellationToken = default);
 }

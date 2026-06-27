@@ -18,6 +18,12 @@ public class AppointmentFactory : IAppointmentFactory
     public UpdateAppointmentStatusDto ToUpdateStatusDto(UpdateAppointmentStatusRequest request) =>
         new(request.Status);
 
+    public AssignAppointmentDto ToAssignDto(AssignAppointmentRequest request) =>
+        new(request.AssignedUserId);
+
+    public AppointmentQuery ToQuery(AppointmentQueryRequest request) =>
+        new(request.Status, request.Page, request.PageSize, request.SortBy, request.SortDirection);
+
     public AppointmentResponse ToResponse(AppointmentDto dto) =>
         new(
             dto.Id,
@@ -30,5 +36,7 @@ public class AppointmentFactory : IAppointmentFactory
             dto.Notes,
             dto.Status,
             dto.CreatedAt,
-            dto.UpdatedAt);
+            dto.UpdatedAt,
+            dto.AssignedUserId,
+            dto.AssignedUserEmail);
 }

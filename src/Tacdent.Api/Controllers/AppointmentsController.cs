@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Tacdent.Api.Auth;
 using Tacdent.Api.Extensions;
 using Tacdent.Api.Factories;
 using Tacdent.Api.ViewModels;
 using Tacdent.Application.Services.Interfaces;
+using Tacdent.Core.DTOs;
 using Tacdent.Core.Entities;
 
 namespace Tacdent.Api.Controllers;
@@ -16,12 +18,17 @@ public class AppointmentsController(
     IAppointmentFactory factory) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<AppointmentResponse>>> GetAll(
-        [FromQuery] AppointmentStatus? status,
+    public async Task<ActionResult<PagedResult<AppointmentResponse>>> GetAll(
+        [FromQuery] AppointmentQueryRequest request,
         CancellationToken cancellationToken)
     {
-        var appointments = await appointmentService.GetAllAsync(status, cancellationToken);
-        return Ok(appointments.Select(factory.ToResponse));
+        var page = await appointmentService.GetPagedAsync(factory.ToQuery(request), cancellationToken);
+        var response = new PagedResult<AppointmentResponse>(
+            page.Items.Select(factory.ToResponse).ToList(),
+            page.Page,
+            page.PageSize,
+            page.TotalCount);
+        return Ok(response);
     }
 
     [HttpGet("{id:guid}")]
@@ -59,9 +66,21 @@ public class AppointmentsController(
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var result = await appointmentService.DeleteAsync(id, cancellationToken);
         return result.ToNoContentResult();
+    }
+
+    [HttpPatch("{id:guid}/assignee")]
+    [Authorize(Roles = Roles.Admin)]
+    public async Task<IActionResult> Assign(
+        Guid id,
+        [FromBody] AssignAppointmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await appointmentService.AssignAsync(id, factory.ToAssignDto(request), cancellationToken);
+        return result.ToOkResult(factory.ToResponse);
     }
 }
