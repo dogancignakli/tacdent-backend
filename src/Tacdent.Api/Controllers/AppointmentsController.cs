@@ -15,7 +15,8 @@ namespace Tacdent.Api.Controllers;
 [Authorize]
 public class AppointmentsController(
     IAppointmentService appointmentService,
-    IAppointmentFactory factory) : ControllerBase
+    IAppointmentFactory factory,
+    IRecaptchaValidator recaptchaValidator) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<PagedResult<AppointmentResponse>>> GetAll(
@@ -44,6 +45,17 @@ public class AppointmentsController(
         [FromBody] CreateAppointmentRequest request,
         CancellationToken cancellationToken)
     {
+        var recaptchaResult = await recaptchaValidator.ValidateAsync(
+            request.RecaptchaToken,
+            "booking",
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            cancellationToken);
+
+        if (recaptchaResult.IsFailure)
+        {
+            return recaptchaResult.Error.ToProblemResult();
+        }
+
         var result = await appointmentService.CreateAsync(factory.ToCreateDto(request), cancellationToken);
 
         if (result.IsFailure)

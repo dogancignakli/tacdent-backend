@@ -11,7 +11,12 @@ public class LoginRequestValidatorTests
     [Fact]
     public async Task Validate_WhenEmailAndPasswordProvided_ShouldNotHaveErrors()
     {
-        var request = new LoginRequest { Email = "admin@tacdent.local", Password = "secret" };
+        var request = new LoginRequest
+        {
+            Email = "admin@tacdent.local",
+            Password = "secret",
+            RecaptchaToken = "test-token",
+        };
 
         var result = await _sut.TestValidateAsync(request);
 

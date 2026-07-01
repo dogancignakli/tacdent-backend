@@ -10,13 +10,27 @@ namespace Tacdent.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController(IAuthService authService, IJwtTokenGenerator jwtTokenGenerator) : ControllerBase
+public class AuthController(
+    IAuthService authService,
+    IJwtTokenGenerator jwtTokenGenerator,
+    IRecaptchaValidator recaptchaValidator) : ControllerBase
 {
     [HttpPost("login")]
     [AllowAnonymous]
     [EnableRateLimiting("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
+        var recaptchaResult = await recaptchaValidator.ValidateAsync(
+            request.RecaptchaToken,
+            "login",
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            cancellationToken);
+
+        if (recaptchaResult.IsFailure)
+        {
+            return recaptchaResult.Error.ToProblemResult();
+        }
+
         var result = await authService.AuthenticateAsync(request.Email, request.Password, cancellationToken);
 
         if (result.IsFailure)
