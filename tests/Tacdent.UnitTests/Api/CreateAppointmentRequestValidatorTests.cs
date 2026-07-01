@@ -18,6 +18,7 @@ public class CreateAppointmentRequestValidatorTests
             PreferredTime = new TimeOnly(10, 30),
             ServiceType = "General Checkup",
             Notes = "First visit",
+            RecaptchaToken = "test-token",
         };
 
     [Fact]

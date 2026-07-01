@@ -14,6 +14,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.Configure<AuthOptions>(configuration.GetSection(AuthOptions.SectionName));
+        services.Configure<RecaptchaOptions>(configuration.GetSection(RecaptchaOptions.SectionName));
 
         // Mapperly mappers are stateless generated classes.
         services.AddSingleton<AppointmentMapper>();

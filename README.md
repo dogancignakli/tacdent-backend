@@ -78,11 +78,14 @@ docker compose up -d --remove-orphans
 
 ### 2. Set local dev secrets (required before first run)
 
-Secrets are **not** in git. The API refuses to start without `Auth:AdminPassword` and a `Jwt:Key` of at least 32 characters.
+Secrets are **not** in git. The API refuses to start without `Auth:AdminPassword`, a `Jwt:Key` of at least 32 characters, and (when `Recaptcha:Enabled` is `true`) `Recaptcha:SecretKey`.
 
 ```bash
 dotnet user-secrets set "Auth:AdminPassword" "<your-dev-password>" --project src/Tacdent.Api
 dotnet user-secrets set "Jwt:Key" "<your-32+-char-signing-key>" --project src/Tacdent.Api
+dotnet user-secrets set "Recaptcha:SecretKey" "<your-recaptcha-secret-key>" --project src/Tacdent.Api
+# or disable reCAPTCHA locally:
+dotnet user-secrets set "Recaptcha:Enabled" "false" --project src/Tacdent.Api
 ```
 
 Copy `src/Tacdent.Api/appsettings.Development.json` from a teammate or create one locally for the SQL Server connection string (file is gitignored).
@@ -128,17 +131,26 @@ Staff access uses **per-user accounts** (email + password) stored in SQL Server.
 | Bootstrap admin password | `Auth:AdminPassword` | .NET user-secrets (see below) |
 | JWT signing key | `Jwt:Key` | .NET user-secrets (min 32 chars) |
 | Token lifetime | `Jwt:ExpiryMinutes` | `480` (8 hours) in `appsettings.Development.json` |
+| reCAPTCHA secret | `Recaptcha:SecretKey` | .NET user-secrets (required when `Recaptcha:Enabled` is `true`) |
+| reCAPTCHA min score | `Recaptcha:MinScore` | `0.5` in `appsettings.json` |
+| reCAPTCHA enabled | `Recaptcha:Enabled` | `true` in `appsettings.json`; set `false` to skip verification locally |
 
 **Local dev secrets** — `appsettings.Development.json` is gitignored. Set secrets once per machine:
 
 ```bash
 dotnet user-secrets set "Auth:AdminPassword" "<your-dev-password>" --project src/Tacdent.Api
 dotnet user-secrets set "Jwt:Key" "<your-32+-char-signing-key>" --project src/Tacdent.Api
+# reCAPTCHA (public booking + login) — get keys at https://www.google.com/recaptcha/admin/create (v3)
+dotnet user-secrets set "Recaptcha:SecretKey" "<your-recaptcha-secret-key>" --project src/Tacdent.Api
+# or disable locally:
+dotnet user-secrets set "Recaptcha:Enabled" "false" --project src/Tacdent.Api
 # optional:
 dotnet user-secrets set "Auth:AdminEmail" "admin@tacdent.local" --project src/Tacdent.Api
 ```
 
-**Login** — `POST /api/auth/login` with `{ "email": "...", "password": "..." }` returns `{ "token": "...", "expiresAt": "...", "role": "Admin" | "Staff" }`. Rate limited to **5 attempts per IP per 5 minutes** (`429` when exceeded).
+**Login** — `POST /api/auth/login` with `{ "email": "...", "password": "...", "recaptchaToken": "..." }` returns `{ "token": "...", "expiresAt": "...", "role": "Admin" | "Staff" }`. Rate limited to **5 attempts per IP per 5 minutes** (`429` when exceeded).
+
+**reCAPTCHA v3** — public `POST /api/appointments` and `POST /api/auth/login` require a `recaptchaToken`. The backend verifies it with Google (`success`, matching `action`, `score >= MinScore`). When `Recaptcha:Enabled` is `false` or `SecretKey` is empty, verification is skipped (validator returns success). The API refuses to start when `Enabled=true` and `SecretKey` is missing.
 
 **Protected requests** — send `Authorization: Bearer <token>` on management endpoints. Role-restricted actions use `[Authorize(Roles = Roles.Admin)]` (e.g. delete appointments, user management, assignee updates).
 

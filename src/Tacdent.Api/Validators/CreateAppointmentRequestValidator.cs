@@ -30,5 +30,7 @@ public class CreateAppointmentRequestValidator : AbstractValidator<CreateAppoint
         RuleFor(x => x.PreferredDate)
             .GreaterThanOrEqualTo(_ => DateOnly.FromDateTime(DateTime.UtcNow.Date))
             .WithMessage("Preferred date cannot be in the past.");
+
+        RuleFor(x => x.RecaptchaToken).NotEmpty();
     }
 }

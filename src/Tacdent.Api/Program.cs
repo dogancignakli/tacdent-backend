@@ -47,6 +47,15 @@ if (string.IsNullOrWhiteSpace(jwtOptions.Key) || jwtOptions.Key.Length < 32)
         "Jwt:Key must be at least 32 characters. Set it via user secrets, environment variables, or appsettings.");
 }
 
+var recaptchaOptions = builder.Configuration.GetSection(RecaptchaOptions.SectionName).Get<RecaptchaOptions>()
+    ?? new RecaptchaOptions();
+
+if (recaptchaOptions.Enabled && string.IsNullOrWhiteSpace(recaptchaOptions.SecretKey))
+{
+    throw new InvalidOperationException(
+        "Recaptcha:SecretKey is not configured while Recaptcha:Enabled is true. Set it via user secrets, environment variables, or appsettings, or set Recaptcha:Enabled to false.");
+}
+
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

@@ -5,6 +5,7 @@ obj/
 ## IDE
 .vs/
 .idea/
+.cursor/
 *.user
 *.suo
 

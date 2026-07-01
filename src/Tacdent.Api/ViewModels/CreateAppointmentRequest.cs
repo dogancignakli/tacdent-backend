@@ -10,4 +10,5 @@ public class CreateAppointmentRequest
     public TimeOnly PreferredTime { get; set; }
     public string ServiceType { get; set; } = string.Empty;
     public string? Notes { get; set; }
+    public string RecaptchaToken { get; set; } = string.Empty;
 }
