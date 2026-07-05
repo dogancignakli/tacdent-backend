@@ -13,6 +13,8 @@ public class AppointmentServiceTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IAppointmentRepository> _appointmentRepository = new();
+    private readonly Mock<IServiceRepository> _serviceRepository = new();
+    private readonly Mock<IConsentRepository> _consentRepository = new();
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly AppointmentMapper _mapper = new();
     private readonly AppointmentService _sut;
@@ -20,6 +22,8 @@ public class AppointmentServiceTests
     public AppointmentServiceTests()
     {
         _unitOfWork.SetupGet(u => u.Appointments).Returns(_appointmentRepository.Object);
+        _unitOfWork.SetupGet(u => u.Services).Returns(_serviceRepository.Object);
+        _unitOfWork.SetupGet(u => u.Consents).Returns(_consentRepository.Object);
         _unitOfWork.SetupGet(u => u.Users).Returns(_userRepository.Object);
         _sut = new AppointmentService(_unitOfWork.Object, _mapper);
     }
@@ -99,10 +103,17 @@ public class AppointmentServiceTests
     public async Task CreateAsync_WhenValid_PersistsPendingAppointment()
     {
         var dto = TestData.ValidCreateDto();
+        var service = TestData.SampleService(dto.ServiceId);
         Appointment? captured = null;
+        _serviceRepository
+            .Setup(r => r.GetByIdAsync(dto.ServiceId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(service);
         _appointmentRepository
             .Setup(r => r.AddAsync(It.IsAny<Appointment>(), It.IsAny<CancellationToken>()))
             .Callback<Appointment, CancellationToken>((entity, _) => captured = entity)
+            .Returns(Task.CompletedTask);
+        _consentRepository
+            .Setup(r => r.AddAsync(It.IsAny<Consent>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _unitOfWork
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -115,9 +126,14 @@ public class AppointmentServiceTests
         captured!.Id.ShouldNotBe(Guid.Empty);
         captured.Status.ShouldBe(AppointmentStatus.Pending);
         captured.PatientName.ShouldBe(dto.PatientName);
+        captured.ServiceId.ShouldBe(service.Id);
+        captured.ServiceType.ShouldBe(service.NameTr);
         _appointmentRepository.Verify(
             r => r.AddAsync(It.IsAny<Appointment>(), It.IsAny<CancellationToken>()),
             Times.Once);
+        _consentRepository.Verify(
+            r => r.AddAsync(It.IsAny<Consent>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
         _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 

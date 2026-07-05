@@ -40,11 +40,72 @@ public class AppointmentService(IUnitOfWork unitOfWork, AppointmentMapper mapper
             return Result.Failure<AppointmentDto>(AppointmentErrors.PastDate);
         }
 
-        var appointment = mapper.ToEntity(dto);
-        appointment.Id = Guid.NewGuid();
-        appointment.Status = AppointmentStatus.Pending;
+        if (!dto.KvkkInformationAccepted || !dto.KvkkExplicitConsentAccepted)
+        {
+            return Result.Failure<AppointmentDto>(AppointmentErrors.ConsentRequired);
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.KvkkInformationVersion)
+            || string.IsNullOrWhiteSpace(dto.KvkkExplicitConsentVersion))
+        {
+            return Result.Failure<AppointmentDto>(AppointmentErrors.ConsentRequired);
+        }
+
+        var service = await unitOfWork.Services.GetByIdAsync(dto.ServiceId, cancellationToken);
+        if (service is null || !service.IsActive)
+        {
+            return Result.Failure<AppointmentDto>(AppointmentErrors.InvalidService);
+        }
+
+        var appointment = new Appointment
+        {
+            Id = Guid.NewGuid(),
+            PatientName = dto.PatientName.Trim(),
+            Email = dto.Email.Trim(),
+            Phone = dto.Phone.Trim(),
+            PreferredDate = dto.PreferredDate,
+            PreferredTime = dto.PreferredTime,
+            ServiceId = service.Id,
+            ServiceType = service.NameTr,
+            Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes.Trim(),
+            Status = AppointmentStatus.Pending,
+        };
+
+        var acceptedAt = DateTime.UtcNow;
+        var consents = new[]
+        {
+            new Consent
+            {
+                Id = Guid.NewGuid(),
+                AppointmentId = appointment.Id,
+                ConsentType = ConsentType.KvkkInformation,
+                TextVersion = dto.KvkkInformationVersion.Trim(),
+                AcceptedAt = acceptedAt,
+                PatientName = appointment.PatientName,
+                Email = appointment.Email,
+                Phone = appointment.Phone,
+                IpAddress = dto.IpAddress,
+            },
+            new Consent
+            {
+                Id = Guid.NewGuid(),
+                AppointmentId = appointment.Id,
+                ConsentType = ConsentType.KvkkExplicitConsent,
+                TextVersion = dto.KvkkExplicitConsentVersion.Trim(),
+                AcceptedAt = acceptedAt,
+                PatientName = appointment.PatientName,
+                Email = appointment.Email,
+                Phone = appointment.Phone,
+                IpAddress = dto.IpAddress,
+            },
+        };
 
         await unitOfWork.Appointments.AddAsync(appointment, cancellationToken);
+        foreach (var consent in consents)
+        {
+            await unitOfWork.Consents.AddAsync(consent, cancellationToken);
+        }
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success(mapper.ToDto(appointment));

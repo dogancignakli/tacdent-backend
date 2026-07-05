@@ -15,11 +15,16 @@ public class ServiceMapperTests
         var dto = _sut.ToDto(entity);
 
         dto.Id.ShouldBe(entity.Id);
-        dto.Name.ShouldBe(entity.Name);
-        dto.Description.ShouldBe(entity.Description);
+        dto.NameTr.ShouldBe(entity.NameTr);
+        dto.NameEn.ShouldBe(entity.NameEn);
+        dto.DescriptionTr.ShouldBe(entity.DescriptionTr);
+        dto.DescriptionEn.ShouldBe(entity.DescriptionEn);
         dto.Icon.ShouldBe(entity.Icon);
-        dto.PriceFrom.ShouldBe(entity.PriceFrom);
+        dto.PriceFromTry.ShouldBe(entity.PriceFromTry);
+        dto.PriceFromEur.ShouldBe(entity.PriceFromEur);
         dto.DurationMinutes.ShouldBe(entity.DurationMinutes);
+        dto.DisplayOrder.ShouldBe(entity.DisplayOrder);
+        dto.IsActive.ShouldBe(entity.IsActive);
     }
 
     [Fact]
@@ -30,6 +35,6 @@ public class ServiceMapperTests
         var dtos = _sut.ToDtoList(entities);
 
         dtos.ShouldHaveSingleItem();
-        dtos[0].Name.ShouldBe(entities[0].Name);
+        dtos[0].NameTr.ShouldBe(entities[0].NameTr);
     }
 }

@@ -9,7 +9,7 @@ namespace Tacdent.Api.Factories;
 /// </summary>
 public interface IAppointmentFactory
 {
-    CreateAppointmentDto ToCreateDto(CreateAppointmentRequest request);
+    CreateAppointmentDto ToCreateDto(CreateAppointmentRequest request, string? ipAddress);
 
     UpdateAppointmentStatusDto ToUpdateStatusDto(UpdateAppointmentStatusRequest request);
 

@@ -23,7 +23,7 @@ public class AuthController(
         var recaptchaResult = await recaptchaValidator.ValidateAsync(
             request.RecaptchaToken,
             "login",
-            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            HttpContext.GetClientIpAddress(),
             cancellationToken);
 
         if (recaptchaResult.IsFailure)

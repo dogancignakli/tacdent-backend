@@ -59,6 +59,9 @@ namespace Tacdent.Data.Migrations
                     b.Property<TimeOnly>("PreferredTime")
                         .HasColumnType("time");
 
+                    b.Property<int?>("ServiceId")
+                        .HasColumnType("int");
+
                     b.Property<string>("ServiceType")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -78,9 +81,61 @@ namespace Tacdent.Data.Migrations
 
                     b.HasIndex("PreferredDate");
 
+                    b.HasIndex("ServiceId");
+
                     b.HasIndex("Status");
 
                     b.ToTable("Appointments");
+                });
+
+            modelBuilder.Entity("Tacdent.Core.Entities.Consent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AcceptedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConsentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<string>("PatientName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("TextVersion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId");
+
+                    b.HasIndex("ConsentType", "TextVersion");
+
+                    b.ToTable("Consents");
                 });
 
             modelBuilder.Entity("Tacdent.Core.Entities.DentalService", b =>
@@ -94,10 +149,18 @@ namespace Tacdent.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Description")
+                    b.Property<string>("DescriptionEn")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("DescriptionTr")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
 
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("int");
@@ -109,12 +172,21 @@ namespace Tacdent.Data.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("NameEn")
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
 
-                    b.Property<decimal>("PriceFrom")
+                    b.Property<string>("NameTr")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<decimal>("PriceFromEur")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("PriceFromTry")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
 
@@ -130,60 +202,160 @@ namespace Tacdent.Data.Migrations
                         {
                             Id = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Comprehensive oral exam, cleaning, and preventive care.",
+                            DescriptionEn = "Comprehensive oral exam, cleaning, and preventive care.",
+                            DescriptionTr = "Kapsamlı ağız muayenesi, temizlik ve koruyucu bakım.",
+                            DisplayOrder = 1,
                             DurationMinutes = 45,
                             Icon = "checkup",
                             IsActive = true,
-                            Name = "General Checkup",
-                            PriceFrom = 75m,
+                            NameEn = "General Checkup",
+                            NameTr = "Genel Muayene",
+                            PriceFromEur = 25m,
+                            PriceFromTry = 75m,
                             UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 2,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Professional whitening for a brighter, confident smile.",
+                            DescriptionEn = "Professional whitening for a brighter, confident smile.",
+                            DescriptionTr = "Daha parlak ve özgüvenli bir gülüş için profesyonel beyazlatma.",
+                            DisplayOrder = 2,
                             DurationMinutes = 60,
                             Icon = "whitening",
                             IsActive = true,
-                            Name = "Teeth Whitening",
-                            PriceFrom = 199m,
+                            NameEn = "Teeth Whitening",
+                            NameTr = "Diş Beyazlatma",
+                            PriceFromEur = 65m,
+                            PriceFromTry = 199m,
                             UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 3,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Permanent tooth replacement with natural-looking results.",
+                            DescriptionEn = "Permanent tooth replacement with natural-looking results.",
+                            DescriptionTr = "Doğal görünümlü kalıcı diş değişimi.",
+                            DisplayOrder = 3,
                             DurationMinutes = 90,
                             Icon = "implant",
                             IsActive = true,
-                            Name = "Dental Implants",
-                            PriceFrom = 1200m,
+                            NameEn = "Dental Implants",
+                            NameTr = "Diş İmplantı",
+                            PriceFromEur = 350m,
+                            PriceFromTry = 1200m,
                             UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 4,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Clear aligners and braces for straighter teeth.",
+                            DescriptionEn = "Clear aligners and braces for straighter teeth.",
+                            DescriptionTr = "Şeffaf plaklar ve teller ile düzgün dişler.",
+                            DisplayOrder = 4,
                             DurationMinutes = 60,
                             Icon = "ortho",
                             IsActive = true,
-                            Name = "Orthodontics",
-                            PriceFrom = 2500m,
+                            NameEn = "Orthodontics",
+                            NameTr = "Ortodonti",
+                            PriceFromEur = 800m,
+                            PriceFromTry = 2500m,
                             UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 5,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Same-day relief for pain, breaks, and urgent issues.",
+                            DescriptionEn = "Same-day relief for pain, breaks, and urgent issues.",
+                            DescriptionTr = "Ağrı, kırık ve acil durumlar için aynı gün müdahale.",
+                            DisplayOrder = 5,
                             DurationMinutes = 30,
                             Icon = "emergency",
                             IsActive = true,
-                            Name = "Emergency Care",
-                            PriceFrom = 120m,
+                            NameEn = "Emergency Care",
+                            NameTr = "Acil Bakım",
+                            PriceFromEur = 40m,
+                            PriceFromTry = 120m,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
+                });
+
+            modelBuilder.Entity("Tacdent.Core.Entities.Testimonial", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AuthorName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("QuoteEn")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("QuoteTr")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int?>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Testimonials");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            AuthorName = "Sarah M.",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayOrder = 1,
+                            IsActive = true,
+                            QuoteEn = "The team made me feel calm from the moment I walked in. Best dental experience I've had.",
+                            QuoteTr = "Kapıdan girdiğim andan itibaren kendimi rahat hissettim. Şimdiye kadarki en iyi diş deneyimim.",
+                            Rating = 5,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 2,
+                            AuthorName = "James L.",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayOrder = 2,
+                            IsActive = true,
+                            QuoteEn = "Booking online was easy and the reminder meant I never missed my appointment.",
+                            QuoteTr = "Çevrimiçi randevu almak kolaydı ve hatırlatma sayesinde randevumu unutmadım.",
+                            Rating = 5,
+                            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 3,
+                            AuthorName = "Ayşe K.",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayOrder = 3,
+                            IsActive = true,
+                            QuoteEn = "Professional, gentle, and transparent about every step. I highly recommend them.",
+                            QuoteTr = "Profesyonel, nazik ve her adımı şeffaf anlattılar. Kesinlikle tavsiye ederim.",
+                            Rating = 5,
                             UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
@@ -239,7 +411,30 @@ namespace Tacdent.Data.Migrations
                         .HasForeignKey("AssignedUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("Tacdent.Core.Entities.DentalService", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("AssignedUser");
+
+                    b.Navigation("Service");
+                });
+
+            modelBuilder.Entity("Tacdent.Core.Entities.Consent", b =>
+                {
+                    b.HasOne("Tacdent.Core.Entities.Appointment", "Appointment")
+                        .WithMany("Consents")
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Appointment");
+                });
+
+            modelBuilder.Entity("Tacdent.Core.Entities.Appointment", b =>
+                {
+                    b.Navigation("Consents");
                 });
 #pragma warning restore 612, 618
         }

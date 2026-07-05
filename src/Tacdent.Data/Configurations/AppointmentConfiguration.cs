@@ -29,6 +29,13 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(a => a.Service)
+            .WithMany()
+            .HasForeignKey(a => a.ServiceId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(a => a.AssignedUserId);
+        builder.HasIndex(a => a.ServiceId);
     }
 }

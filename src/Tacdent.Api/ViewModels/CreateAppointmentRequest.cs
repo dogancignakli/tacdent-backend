@@ -8,7 +8,11 @@ public class CreateAppointmentRequest
     public string Phone { get; set; } = string.Empty;
     public DateOnly PreferredDate { get; set; }
     public TimeOnly PreferredTime { get; set; }
-    public string ServiceType { get; set; } = string.Empty;
+    public int ServiceId { get; set; }
     public string? Notes { get; set; }
+    public bool KvkkInformationAccepted { get; set; }
+    public string KvkkInformationVersion { get; set; } = string.Empty;
+    public bool KvkkExplicitConsentAccepted { get; set; }
+    public string KvkkExplicitConsentVersion { get; set; } = string.Empty;
     public string RecaptchaToken { get; set; } = string.Empty;
 }
