@@ -27,7 +27,7 @@ public class ServiceCatalogServiceTests
 
         result.ShouldHaveSingleItem();
         result[0].Id.ShouldBe(service.Id);
-        result[0].Name.ShouldBe(service.Name);
-        result[0].Description.ShouldBe(service.Description);
+        result[0].NameTr.ShouldBe(service.NameTr);
+        result[0].DescriptionTr.ShouldBe(service.DescriptionTr);
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Tacdent.Api.Auth;
 using Tacdent.Api.Extensions;
 using Tacdent.Api.Factories;
@@ -41,14 +42,17 @@ public class AppointmentsController(
 
     [HttpPost]
     [AllowAnonymous]
+    [EnableRateLimiting("booking")]
     public async Task<IActionResult> Create(
         [FromBody] CreateAppointmentRequest request,
         CancellationToken cancellationToken)
     {
+        var clientIp = HttpContext.GetClientIpAddress();
+
         var recaptchaResult = await recaptchaValidator.ValidateAsync(
             request.RecaptchaToken,
             "booking",
-            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            clientIp,
             cancellationToken);
 
         if (recaptchaResult.IsFailure)
@@ -56,7 +60,9 @@ public class AppointmentsController(
             return recaptchaResult.Error.ToProblemResult();
         }
 
-        var result = await appointmentService.CreateAsync(factory.ToCreateDto(request), cancellationToken);
+        var result = await appointmentService.CreateAsync(
+            factory.ToCreateDto(request, clientIp),
+            cancellationToken);
 
         if (result.IsFailure)
         {

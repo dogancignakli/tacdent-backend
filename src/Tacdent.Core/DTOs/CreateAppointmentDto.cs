@@ -7,6 +7,11 @@ public record CreateAppointmentDto(
     string Phone,
     DateOnly PreferredDate,
     TimeOnly PreferredTime,
-    string ServiceType,
-    string? Notes
+    int ServiceId,
+    string? Notes,
+    bool KvkkInformationAccepted,
+    string KvkkInformationVersion,
+    bool KvkkExplicitConsentAccepted,
+    string KvkkExplicitConsentVersion,
+    string? IpAddress
 );

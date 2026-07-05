@@ -20,17 +20,23 @@ public class AppointmentFactoryTests
             Phone = "  +15551234567 ",
             PreferredDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(3)),
             PreferredTime = new TimeOnly(10, 30),
-            ServiceType = "  General Checkup ",
+            ServiceId = 1,
             Notes = "   ",
+            KvkkInformationAccepted = true,
+            KvkkInformationVersion = " 2026-07-01 ",
+            KvkkExplicitConsentAccepted = true,
+            KvkkExplicitConsentVersion = " 2026-07-01 ",
         };
 
-        var dto = _sut.ToCreateDto(request);
+        var dto = _sut.ToCreateDto(request, "127.0.0.1");
 
         dto.PatientName.ShouldBe("Jane Doe");
         dto.Email.ShouldBe("jane@example.com");
         dto.Phone.ShouldBe("+15551234567");
-        dto.ServiceType.ShouldBe("General Checkup");
+        dto.ServiceId.ShouldBe(1);
         dto.Notes.ShouldBeNull();
+        dto.KvkkInformationVersion.ShouldBe("2026-07-01");
+        dto.IpAddress.ShouldBe("127.0.0.1");
     }
 
     [Fact]
@@ -43,11 +49,15 @@ public class AppointmentFactoryTests
             Phone = "+15551234567",
             PreferredDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(3)),
             PreferredTime = new TimeOnly(10, 30),
-            ServiceType = "General Checkup",
+            ServiceId = 1,
             Notes = "  First visit ",
+            KvkkInformationAccepted = true,
+            KvkkInformationVersion = "2026-07-01",
+            KvkkExplicitConsentAccepted = true,
+            KvkkExplicitConsentVersion = "2026-07-01",
         };
 
-        var dto = _sut.ToCreateDto(request);
+        var dto = _sut.ToCreateDto(request, null);
 
         dto.Notes.ShouldBe("First visit");
     }

@@ -1,15 +1,19 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using System.Net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Tacdent.Api;
 using Tacdent.Api.Auth;
+using Tacdent.Api.Extensions;
 using Tacdent.Api.Filters;
 using Tacdent.Api.Json;
+using Tacdent.Api.Middleware;
 using Tacdent.Application;
 using Tacdent.Application.Options;
 using Tacdent.Data;
@@ -74,16 +78,49 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+builder.Services.Configure<RecaptchaOptions>(builder.Configuration.GetSection(RecaptchaOptions.SectionName));
+builder.Services.Configure<InternalApiOptions>(builder.Configuration.GetSection(InternalApiOptions.SectionName));
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+    var knownProxies = builder.Configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>();
+    if (knownProxies is { Length: > 0 })
+    {
+        foreach (var proxy in knownProxies)
+        {
+            if (IPAddress.TryParse(proxy, out var ip))
+            {
+                options.KnownProxies.Add(ip);
+            }
+        }
+
+        return;
+    }
+
+    options.KnownProxies.Add(IPAddress.Loopback);
+    options.KnownProxies.Add(IPAddress.IPv6Loopback);
+});
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.AddPolicy("login", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            httpContext.GetClientIpAddress() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 5,
                 Window = TimeSpan.FromMinutes(5),
+            }));
+    options.AddPolicy("booking", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.GetClientIpAddress() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(15),
             }));
 });
 
@@ -135,6 +172,8 @@ app.Use(async (context, next) =>
     await next();
 });
 
+app.UseForwardedHeaders();
+app.UseMiddleware<InternalApiMiddleware>();
 app.UseCors("Frontend");
 app.UseHttpsRedirection();
 app.UseAuthentication();

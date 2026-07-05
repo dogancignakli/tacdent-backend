@@ -14,8 +14,13 @@ internal static class TestData
             "+15551234567",
             DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(7)),
             new TimeOnly(10, 30),
-            "General Checkup",
-            "First visit");
+            ServiceId: 1,
+            Notes: "First visit",
+            KvkkInformationAccepted: true,
+            KvkkInformationVersion: "2026-07-01",
+            KvkkExplicitConsentAccepted: true,
+            KvkkExplicitConsentVersion: "2026-07-01",
+            IpAddress: "127.0.0.1");
 
     internal static Appointment SampleAppointment(Guid? id = null) =>
         new()
@@ -26,7 +31,8 @@ internal static class TestData
             Phone = "+15551234567",
             PreferredDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(7)),
             PreferredTime = new TimeOnly(10, 30),
-            ServiceType = "General Checkup",
+            ServiceId = 1,
+            ServiceType = "Genel Muayene",
             Notes = "First visit",
             Status = AppointmentStatus.Pending,
             CreatedAt = AuditTimestamp,
@@ -37,11 +43,15 @@ internal static class TestData
         new()
         {
             Id = id,
-            Name = "General Checkup",
-            Description = "Comprehensive oral exam.",
+            NameTr = "Genel Muayene",
+            NameEn = "General Checkup",
+            DescriptionTr = "Kapsamlı ağız muayenesi.",
+            DescriptionEn = "Comprehensive oral exam.",
             Icon = "checkup",
-            PriceFrom = 75m,
+            PriceFromTry = 75m,
+            PriceFromEur = 25m,
             DurationMinutes = 45,
+            DisplayOrder = 1,
             IsActive = true,
             CreatedAt = AuditTimestamp,
             UpdatedAt = AuditTimestamp,

@@ -5,15 +5,20 @@ namespace Tacdent.Api.Factories;
 
 public class AppointmentFactory : IAppointmentFactory
 {
-    public CreateAppointmentDto ToCreateDto(CreateAppointmentRequest request) =>
+    public CreateAppointmentDto ToCreateDto(CreateAppointmentRequest request, string? ipAddress) =>
         new(
             request.PatientName.Trim(),
             request.Email.Trim(),
             request.Phone.Trim(),
             request.PreferredDate,
             request.PreferredTime,
-            request.ServiceType.Trim(),
-            string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim());
+            request.ServiceId,
+            string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
+            request.KvkkInformationAccepted,
+            request.KvkkInformationVersion.Trim(),
+            request.KvkkExplicitConsentAccepted,
+            request.KvkkExplicitConsentVersion.Trim(),
+            ipAddress);
 
     public UpdateAppointmentStatusDto ToUpdateStatusDto(UpdateAppointmentStatusRequest request) =>
         new(request.Status);

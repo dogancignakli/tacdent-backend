@@ -10,11 +10,14 @@ public class Appointment : AuditableEntity
     public required string Phone { get; set; }
     public DateOnly PreferredDate { get; set; }
     public TimeOnly PreferredTime { get; set; }
+    public int? ServiceId { get; set; }
     public required string ServiceType { get; set; }
     public string? Notes { get; set; }
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Pending;
 
     public Guid? AssignedUserId { get; set; }
 
+    public DentalService? Service { get; set; }
     public User? AssignedUser { get; set; }
+    public ICollection<Consent> Consents { get; set; } = [];
 }

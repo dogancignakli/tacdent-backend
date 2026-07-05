@@ -16,8 +16,12 @@ public class CreateAppointmentRequestValidatorTests
             Phone = "+15551234567",
             PreferredDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(3)),
             PreferredTime = new TimeOnly(10, 30),
-            ServiceType = "General Checkup",
+            ServiceId = 1,
             Notes = "First visit",
+            KvkkInformationAccepted = true,
+            KvkkInformationVersion = "2026-07-01",
+            KvkkExplicitConsentAccepted = true,
+            KvkkExplicitConsentVersion = "2026-07-01",
             RecaptchaToken = "test-token",
         };
 
@@ -71,5 +75,18 @@ public class CreateAppointmentRequestValidatorTests
         var result = await _sut.TestValidateAsync(request);
 
         result.ShouldHaveValidationErrorFor(x => x.Notes);
+    }
+
+    [Fact]
+    public async Task Validate_WhenKvkkConsentsNotAccepted_ShouldHaveValidationErrors()
+    {
+        var request = ValidRequest();
+        request.KvkkInformationAccepted = false;
+        request.KvkkExplicitConsentAccepted = false;
+
+        var result = await _sut.TestValidateAsync(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.KvkkInformationAccepted);
+        result.ShouldHaveValidationErrorFor(x => x.KvkkExplicitConsentAccepted);
     }
 }

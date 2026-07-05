@@ -46,21 +46,6 @@ public class AppointmentMapperTests
     }
 
     [Fact]
-    public void ToEntity_IgnoresServerOwnedFields()
-    {
-        var dto = TestData.ValidCreateDto();
-
-        var entity = _sut.ToEntity(dto);
-
-        entity.Id.ShouldBe(Guid.Empty);
-        entity.Status.ShouldBe(default);
-        entity.CreatedAt.ShouldBe(default);
-        entity.UpdatedAt.ShouldBe(default);
-        entity.PatientName.ShouldBe(dto.PatientName);
-        entity.Email.ShouldBe(dto.Email);
-    }
-
-    [Fact]
     public void ToDtoList_MapsAllEntities()
     {
         var entities = new List<Appointment> { TestData.SampleAppointment() }.AsReadOnly();

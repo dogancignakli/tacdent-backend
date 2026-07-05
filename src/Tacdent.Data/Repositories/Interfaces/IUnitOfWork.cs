@@ -12,5 +12,9 @@ public interface IUnitOfWork
 
     IUserRepository Users { get; }
 
+    ITestimonialRepository Testimonials { get; }
+
+    IConsentRepository Consents { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
