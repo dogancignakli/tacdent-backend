@@ -104,11 +104,13 @@ The API runs at [http://localhost:5065](http://localhost:5065). Migrations are a
 
 ```bash
 cd ../tacdent-frontend
-cp .env.local.example .env.local   # NEXT_PUBLIC_API_URL=http://localhost:5065
+cp .env.local.example .env.local   # set NEXT_PUBLIC_API_URL, SITE_URL, RECAPTCHA_SITE_KEY
 npm install && npm run dev
 ```
 
-The site runs at [http://localhost:3000](http://localhost:3000). Public booking is at `/appointments`; staff panel at `/admin/login`.
+The site runs at [http://localhost:3000](http://localhost:3000) (redirects to `/tr`). Public booking is at `/tr/appointments`; staff panel at `/tr/admin/login`.
+
+Frontend env vars (see `tacdent-frontend` README): `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`. When reCAPTCHA is enabled on the API, the frontend site key must match the same Google reCAPTCHA v3 project.
 
 ### API documentation (Scalar)
 
