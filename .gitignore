@@ -13,6 +13,10 @@ obj/
 .env
 appsettings.*.local.json
 src/Tacdent.Api/appsettings.Development.json
+src/Tacdent.Api/appsettings.Production.json
+
+## Publish output (self-contained IIS deploy)
+publish/
 
 ## OS
 .DS_Store

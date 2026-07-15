@@ -168,6 +168,8 @@ The Next.js frontend stores the JWT in an **httpOnly cookie** via its BFF (`/api
 
 For production, set strong `Auth:AdminPassword` and `Jwt:Key` via environment variables or user secrets. Do not commit real credentials.
 
+**IIS / FTP deployment (shared Windows hosting):** see [DEPLOY.md](DEPLOY.md) — `appsettings.Production.json`, `./scripts/publish-iis.sh`, FileZilla upload, SSL, and verification.
+
 ## API endpoints
 
 | Method | Path | Auth | Description |
