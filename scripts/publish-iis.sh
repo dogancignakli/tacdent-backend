@@ -47,6 +47,24 @@ asp_net_core.set("stdoutLogEnabled", "true")
 asp_net_core.set("stdoutLogFile", ".\\logs\\stdout")
 asp_net_core.set("hostingModel", "outofprocess")
 
+# WebDAV intercepts PUT/DELETE on shared IIS hosts and returns 405; remove it.
+system_web_server = root.find(".//system.webServer")
+if system_web_server is None:
+    raise SystemExit("system.webServer element not found in web.config")
+
+modules = system_web_server.find("modules")
+if modules is None:
+    modules = ET.Element("modules")
+    system_web_server.insert(0, modules)
+if not any(r.get("name") == "WebDAVModule" for r in modules.findall("remove")):
+    ET.SubElement(modules, "remove", {"name": "WebDAVModule"})
+
+handlers = system_web_server.find("handlers")
+if handlers is not None and not any(
+    r.get("name") == "WebDAV" for r in handlers.findall("remove")
+):
+    handlers.insert(0, ET.Element("remove", {"name": "WebDAV"}))
+
 env_vars = asp_net_core.find("environmentVariables")
 if env_vars is None:
     env_vars = ET.SubElement(asp_net_core, "environmentVariables")
