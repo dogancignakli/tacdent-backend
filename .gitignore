@@ -18,6 +18,10 @@ src/Tacdent.Api/appsettings.Production.json
 ## Publish output (self-contained IIS deploy)
 publish/
 
+## Runtime logs
+logs/
+**/logs/
+
 ## OS
 .DS_Store
 

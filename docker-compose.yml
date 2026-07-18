@@ -13,5 +13,18 @@ services:
     volumes:
       - tacdent_mssql_data:/var/opt/mssql
 
+  seq:
+    image: datalust/seq:latest
+    container_name: tacdent-seq
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "5341:80"
+      - "5342:5341"
+    volumes:
+      - tacdent_seq_data:/data
+
 volumes:
   tacdent_mssql_data:
+  tacdent_seq_data:
