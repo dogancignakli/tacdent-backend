@@ -44,7 +44,6 @@ if asp_net_core is None:
     raise SystemExit("aspNetCore element not found in web.config")
 
 asp_net_core.set("stdoutLogEnabled", "true")
-asp_net_core.set("stdoutLogFile", ".\\logs\\stdout")
 asp_net_core.set("hostingModel", "outofprocess")
 
 # WebDAV intercepts PUT/DELETE on shared IIS hosts and returns 405; remove it.
@@ -81,11 +80,15 @@ def set_env(name: str, value: str) -> None:
         ET.SubElement(env_vars, "environmentVariable", {"name": name, "value": value})
 
 set_env("ASPNETCORE_ENVIRONMENT", "Production")
+# Shared IIS hosts often block writes to site root; App_Data is usually writable.
+set_env("Serilog__WriteTo__1__Args__path", "App_Data/logs/tacdent-.log")
+
+asp_net_core.set("stdoutLogFile", ".\\App_Data\\logs\\stdout")
 
 tree.write(path, encoding="utf-8", xml_declaration=True)
 PY
 
-mkdir -p "$OUTPUT/logs"
+mkdir -p "$OUTPUT/App_Data/logs"
 cp "$PROD_SETTINGS" "$OUTPUT/appsettings.Production.json"
 
 echo ""
