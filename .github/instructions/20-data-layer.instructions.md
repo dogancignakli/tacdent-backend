@@ -5,7 +5,9 @@ applyTo: "src/Tacdent.Data/**/*.cs"
 # Data layer (EF Core + SQL Server)
 
 Provider is **SQL Server** (`UseSqlServer`), configured in `AddDataLayer` from the
-`DefaultConnection` connection string. Local dev runs SQL Server in Docker (see `docker-compose.yml`).
+`DefaultConnection` connection string. Local dev runs SQL Server in Docker (`docker-compose.yml`).
+Production uses `docker-compose.prod.yml` (SQL Server 2022 Express). The app login there is
+`tacdent_app`; do not point the app at `sa`.
 
 ## Repositories & Unit of Work
 - Generic base `Repository<T>` (primary ctor takes `TacdentDbContext`) exposes

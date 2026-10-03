@@ -4,7 +4,7 @@
 
 ## Architecture
 
-```
+```text
 tacdent-backend/
 ├── Tacdent.slnx
 ├── docker-compose.yml
@@ -17,7 +17,7 @@ tacdent-backend/
 
 ### Dependency direction
 
-```
+```text
 Api ──> Application ──> Data ──> Core
  └────────────────────────────> Core
 ```
@@ -168,7 +168,9 @@ The Next.js frontend stores the JWT in an **httpOnly cookie** via its BFF (`/api
 
 For production, set strong `Auth:AdminPassword` and `Jwt:Key` via environment variables or user secrets. Do not commit real credentials.
 
-**IIS / FTP deployment (shared Windows hosting):** see [DEPLOY.md](DEPLOY.md) — `appsettings.Production.json`, `./scripts/publish-iis.sh`, FileZilla upload, SSL, and verification.
+**VPS (current production):** see [DEPLOY-VPS.md](DEPLOY-VPS.md). Docker on the same host as the site. MSSQL and the API are not published to the internet.
+
+**IIS / FTP (previous host):** see [DEPLOY.md](DEPLOY.md). That path is not how this API runs now.
 
 ## API endpoints
 
@@ -315,7 +317,7 @@ dotnet ef database update --project src/Tacdent.Data --startup-project src/Tacde
 
 Override the design-time connection string with the `TACDENT_DB` environment variable if needed:
 
-```
+```text
 Server=localhost,1433;Database=tacdent;User Id=sa;Password=Tacdent_dev_2026;TrustServerCertificate=True
 ```
 

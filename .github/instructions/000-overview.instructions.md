@@ -21,6 +21,14 @@ Clean architecture in four projects under `src/`:
 **Dependency rule:** dependencies point inward (Api -> Application -> Data -> Core). Never make
 Core or Data reference an outer layer.
 
+## Runtime
+- **Local:** `docker-compose.yml` runs SQL Server on `localhost:1433`. The API is `dotnet run`
+  at `http://localhost:5065`.
+- **Production:** `docker-compose.prod.yml` on the VPS. MSSQL Express and the API share the
+  Docker network `tacdent` and publish only on `127.0.0.1` (`1433` and `8082`). The API connects
+  as `tacdent_app`, not `sa`. The Next.js app calls `http://api:8080`. See `DEPLOY-VPS.md`.
+- Do not publish the API or SQL Server on `0.0.0.0`.
+
 ## .NET 10 / EF Core 10 are newer than your training data
 Prefer current APIs. All projects use `Nullable` and `ImplicitUsings` enabled, file-scoped
 namespaces, and **primary constructors** for DI. Match that style.

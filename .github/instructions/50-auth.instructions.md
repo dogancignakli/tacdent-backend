@@ -2,20 +2,22 @@
 applyTo: "src/Tacdent.Api/Auth/**/*.cs,src/Tacdent.Api/Controllers/AuthController.cs,src/Tacdent.Application/Services/AuthService.cs,src/Tacdent.Application/Services/Interfaces/IAuthService.cs,src/Tacdent.Application/Options/**/*.cs,src/Tacdent.Application/Errors/AuthErrors.cs"
 ---
 
-# Auth (JWT bearer + shared password)
+# Auth (JWT bearer + Users table)
 
-A single shared admin password is exchanged for a JWT; the token then authorizes the management
-endpoints. There is no Users table — adding multiple accounts later means a Users table + hashing.
+Staff sign in with email and password. `AuthService.AuthenticateAsync` checks the `Users` row
+(PBKDF2 hash, active flag, lockout) and returns `Result<AuthenticatedUserDto>`. Roles are `Admin`
+and `Staff`. The API mints a JWT from that user; the Next.js BFF stores it in an httpOnly cookie.
 
-## Layering (keep these concerns separated)
-- **Application** owns the credential check: `IAuthService.Authenticate(password)` returns `Result`
-  (`Result.Success()` or `Result.Failure(AuthErrors.InvalidCredentials)`). `AuthService` reads the
-  password from `IOptions<AuthOptions>` — never from raw config. `AuthErrors.InvalidCredentials`
-  is an `Error.Unauthorized(...)`.
-- **Api** owns token minting: `IJwtTokenGenerator.GenerateToken()` returns `(token, expiresAt)`,
-  built from `JwtOptions`. It's a presentation concern in `Api/Auth/`, registered **Singleton**.
-- `AuthController` (`POST /api/auth/login`, `[AllowAnonymous]`) calls `Authenticate`; on
-  `IsFailure` returns `result.Error.ToProblemResult()` (401), else returns `LoginResponse(token, expiresAt)`.
+`AdminSeeder` creates `Auth:AdminEmail` / `Auth:AdminPassword` only when `Users` is empty. After
+that the database is the source of truth. Changing the env password does not change the login.
+
+## Layering
+- **Application** owns the credential check and password hashing. `AuthErrors.InvalidCredentials`
+  and `AuthErrors.AccountLocked` are `Error.Unauthorized(...)`.
+- **Api** owns token minting: `IJwtTokenGenerator.GenerateToken(user)` returns `(token, expiresAt)`,
+  registered **Singleton**. `LoginResponse` is `(token, expiresAt, role)`.
+- `AuthController` (`POST /api/auth/login`, `[AllowAnonymous]`) validates reCAPTCHA first, then
+  `AuthenticateAsync`. Failure becomes `ToProblemResult()` (401).
 
 ## Program.cs wiring (don't reorder)
 - Bind `JwtOptions` via `Configure<JwtOptions>(...GetSection(JwtOptions.SectionName))`.
@@ -24,10 +26,13 @@ endpoints. There is no Users table — adding multiple accounts later means a Us
 - `AddAuthorization()`, and call **`app.UseAuthentication()` before `app.UseAuthorization()`**.
 
 ## Protecting endpoints
-- Management controllers are `[Authorize]` at the class level; only public actions are
-  `[AllowAnonymous]`. A new admin-only endpoint needs no extra attribute — it inherits `[Authorize]`.
+- Management controllers are `[Authorize]` at the class level. Public actions are
+  `[AllowAnonymous]` (`auth/login`, booking `Create`, public service and testimonial lists).
+- Admin-only actions add `[Authorize(Roles = Roles.Admin)]` (user management, deletes, assignment).
 
-## Security must-dos (still open / keep in mind)
-- `Jwt:Key` must be long and random (32+ bytes) and **never committed**; same for `Auth:AdminPassword`.
-- The login endpoint has no brute-force protection yet — add rate limiting before going live, since
-  one password guards all patient data.
+## Security
+- `Jwt:Key` is at least 32 characters and is never committed. Same for `Auth:AdminPassword`.
+- Login is rate-limited (`login` policy). Failed attempts lock the user (`MaxFailedAttempts`,
+  `LockoutMinutes`).
+- `POST /api/auth/login` and `POST /api/appointments` require `X-Internal-Api-Key` when
+  `InternalApi:Key` is set. The BFF sends it. Do not accept that header from the public internet.
